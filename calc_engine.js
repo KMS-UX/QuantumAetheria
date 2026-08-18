@@ -144,13 +144,14 @@ export const CalcEngine = {
   // Solar Term (Jie Qi) Month Branch Index
   getSolarMonthBranchIndex(month, day) {
     // Solar terms change roughly around the 4th-8th of each month
-    // Month 1 (Feb) -> Yin (寅, index 2), Month 2 (Mar) -> Mao (卯, index 3), ...
+    // On/after the month's Jie entry: Feb(2) -> Yin (寅, index 2), Mar(3) -> Mao (卯, index 3), ...
+    // Before it: still the previous solar month, e.g. early Feb -> Chou (丑, index 1)
     const solarTermDays = [0, 5, 4, 5, 5, 6, 7, 7, 7, 8, 8, 7, 7]; // Approximate Jie entry days per month
     let branchIdx;
     if (day >= solarTermDays[month]) {
-      branchIdx = (month + 1) % 12; // e.g. Feb(2) after 4th -> index 2 (Yin)
+      branchIdx = month % 12; // e.g. Feb(2) on/after the 4th -> index 2 (Yin)
     } else {
-      branchIdx = (month) % 12;
+      branchIdx = (month - 1 + 12) % 12; // e.g. Feb(2) before the 4th -> index 1 (Chou)
     }
     return branchIdx;
   },

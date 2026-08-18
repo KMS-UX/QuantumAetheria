@@ -188,7 +188,7 @@ export const ChatEngine = {
 
   buildContextPayload() {
     const profile = window.AetheriaState ? window.AetheriaState.profile : {};
-    const natalPayload = window.AetheriaState ? window.AetheriaState.natalPayload : {};
+    const natalPayload = (window.AetheriaState && window.AetheriaState.natalPayload) || {};
     const dreams = window.OneiromancyEngine ? window.OneiromancyEngine.dreams.slice(0, 3) : [];
     const ritualTarot = window.RitualsEngine ? window.RitualsEngine.tarotCards : [];
     const ritualHexagram = window.RitualsEngine ? window.RitualsEngine.ichingLines : [];

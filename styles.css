@@ -1438,6 +1438,7 @@ body::before {
   flex-direction: column;
   overflow: hidden;
   height: 640px;
+  min-width: 0;
 }
 
 /* Quick Prompt Chips */
@@ -1456,6 +1457,7 @@ body::before {
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
+  min-width: 0;
 }
 
 .chat-quick-chip {
@@ -2909,6 +2911,9 @@ body::before {
   .ai-consult-container {
     grid-template-columns: 1fr;
   }
+  .school-summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2934,6 +2939,14 @@ body::before {
   .grid-2 {
     grid-template-columns: 1fr;
   }
+  .hero-action-advice-grid {
+    grid-template-columns: 1fr;
+  }
+  .ritual-widget-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
   .ziwei-grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
@@ -2947,5 +2960,18 @@ body::before {
   }
   .header-center {
     display: none;
+  }
+  .tst-clock-box {
+    display: none;
+  }
+  .header-action-btn span {
+    display: none;
+  }
+  .view-actions-group {
+    flex-wrap: wrap;
+  }
+  .sub-tabs-bar {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }

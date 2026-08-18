@@ -418,8 +418,17 @@ export const CustomSchoolManager = {
           window.AetheriaState.activeAgent = school.id;
         }
         if (this.soundEngine) this.soundEngine.playChime(580, 0.3);
-        if (window.ChatEngine && window.ChatEngine.addSystemMessage) {
-          window.ChatEngine.addSystemMessage(`Switched Oracle Chamber to <strong>${school.name} (${school.icon})</strong>. Injected customized archetype rules.`);
+        if (window.ChatEngine) {
+          window.ChatEngine.activeAgent = school.id;
+          if (window.ChatEngine.appendSystemStatus) {
+            window.ChatEngine.appendSystemStatus(`Switched Oracle Chamber to <strong>${school.name} (${school.icon})</strong>. Injected customized archetype rules.`);
+          }
+          if (window.ChatEngine.appendChatMessage && window.ChatEngine.getActiveAgentDisplay) {
+            window.ChatEngine.appendChatMessage('oracle', window.ChatEngine.getActiveAgentDisplay().greeting, { isGreeting: true });
+          }
+          if (window.ChatEngine.updateContextInspector) {
+            window.ChatEngine.updateContextInspector();
+          }
         }
       });
 

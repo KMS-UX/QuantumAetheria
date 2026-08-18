@@ -89,6 +89,27 @@ export const ChatEngine = {
     analytical: { label: 'Historical & Analytical', desc: 'Mathematical ephemeris, classical text citations & aspect breakdown' }
   },
 
+  // Resolves the active specialist, whether a built-in AGENTS entry or a
+  // CustomSchoolManager school selected via the dynamically-injected buttons.
+  getActiveAgentDisplay() {
+    const builtIn = this.AGENTS[this.activeAgent];
+    if (builtIn) return builtIn;
+
+    const customSchool = (CustomSchoolManager.schools || []).find(s => s.id === this.activeAgent);
+    if (customSchool) {
+      return {
+        id: customSchool.id,
+        name: customSchool.name,
+        title: customSchool.category || 'Custom Divination System',
+        avatar: customSchool.icon || '🔮',
+        greeting: `Greetings, seeker. I now channel the ${customSchool.name} (${customSchool.icon}) tradition. Its custom archetypes and synthesis rules are woven into this consultation. What do you wish to explore?`,
+        description: customSchool.rules
+      };
+    }
+
+    return this.AGENTS.synthesizer;
+  },
+
   init(soundEngine) {
     this.soundEngine = soundEngine;
     this.setupAgentSelector();
@@ -105,7 +126,7 @@ export const ChatEngine = {
     const agentBtns = document.querySelectorAll('.agent-btn');
     agentBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        agentBtns.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.agent-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
         const targetAgent = btn.dataset.agent;
@@ -202,7 +223,7 @@ export const ChatEngine = {
       },
       consultationSettings: {
         activeSpecialist: this.activeAgent,
-        specialistDetails: this.AGENTS[this.activeAgent],
+        specialistDetails: this.getActiveAgentDisplay(),
         consultationTone: this.activeTone,
         toneSpecification: this.TONE_OPTIONS[this.activeTone]?.desc,
         enabledSchools: this.activeSchools
@@ -327,7 +348,7 @@ export const ChatEngine = {
   },
 
   renderInitialGreeting() {
-    const agent = this.AGENTS[this.activeAgent] || this.AGENTS.synthesizer;
+    const agent = this.getActiveAgentDisplay();
     this.appendChatMessage('oracle', agent.greeting, { isGreeting: true });
   },
 
@@ -386,7 +407,7 @@ export const ChatEngine = {
   },
 
   generateLocalFallback(userPrompt) {
-    const agent = this.AGENTS[this.activeAgent];
+    const agent = this.getActiveAgentDisplay();
     const profile = window.AetheriaState ? window.AetheriaState.profile : {};
     const name = profile.name || "Seeker";
 
@@ -448,7 +469,7 @@ Greetings ${name}. I have cast your inquiry through the **${this.TONE_OPTIONS[th
     const historyContainer = document.getElementById('ai-chat-history');
     if (!historyContainer) return null;
 
-    const agent = this.AGENTS[this.activeAgent] || this.AGENTS.synthesizer;
+    const agent = this.getActiveAgentDisplay();
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const messageEl = document.createElement('div');
@@ -536,7 +557,7 @@ Greetings ${name}. I have cast your inquiry through the **${this.TONE_OPTIONS[th
     const historyContainer = document.getElementById('ai-chat-history');
     if (!historyContainer) return;
 
-    const agent = this.AGENTS[this.activeAgent] || this.AGENTS.synthesizer;
+    const agent = this.getActiveAgentDisplay();
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const targetId = `stream-target-${Date.now()}`;
 
@@ -665,10 +686,10 @@ Greetings ${name}. I have cast your inquiry through the **${this.TONE_OPTIONS[th
       return;
     }
 
-    let transcript = `# Aetheria Consultation Transcript\n\nGenerated on: ${new Date().toLocaleString()}\nSpecialist: ${this.AGENTS[this.activeAgent]?.name}\nTone: ${this.TONE_OPTIONS[this.activeTone]?.label}\nActive Schools: ${this.activeSchools.join(', ')}\n\n---\n\n`;
+    let transcript = `# Aetheria Consultation Transcript\n\nGenerated on: ${new Date().toLocaleString()}\nSpecialist: ${this.getActiveAgentDisplay().name}\nTone: ${this.TONE_OPTIONS[this.activeTone]?.label}\nActive Schools: ${this.activeSchools.join(', ')}\n\n---\n\n`;
 
     this.conversationHistory.forEach((msg) => {
-      const speaker = msg.role === 'user' ? 'Seeker' : this.AGENTS[this.activeAgent]?.name;
+      const speaker = msg.role === 'user' ? 'Seeker' : this.getActiveAgentDisplay().name;
       transcript += `### [${msg.timestamp}] ${speaker}:\n${msg.content}\n\n`;
     });
 

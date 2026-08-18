@@ -45,16 +45,24 @@ These are real gaps but each is a bigger lift than the Month Pillar fix, so they
 - **I Ching hexagram database is 14/64 complete.** ~78% of hexagram draws currently fall back to generic placeholder text mislabeled as "Hexagram #1." Needs the other 50 hexagrams' name/judgement text authored — a content task, not code.
 - **Decide how much Western Astrology fidelity this app actually needs.** If it's staying "decorative/approximate" as originally scoped, it's arguably fine as-is (and should be labeled as such in the UI so it doesn't read as authoritative). If real accuracy matters, this section needs a proper ephemeris library (e.g. Swiss Ephemeris bindings) rather than hand-rolled truncated series — a meaningfully bigger change than anything else in this audit.
 
-## Phase 3 — Feature QA pass per module
+## Phase 3 — Feature QA pass per module ✅ done (2026-08-18)
 
-Walk each module against its original stage requirements (matrix in PROJECT_STATUS.md) and note deltas:
+Walked each module against its original stage requirements. Full detail in PROJECT_STATUS.md's "Feature QA audit" section; summary:
 
-- Dashboard: energy gauge, skeleton loaders while awaiting API, daily card-pull widget
-- Foundation/Projections: BaZi grid + Zi Wei 12-palace grid render correctly at different viewport sizes
-- Rituals: Tarot spread, rune cast, I Ching line-building all functionally interactive (not just visual)
-- Oneiromancy: dream CRUD + search/filter actually persists and queries `localStorage`
-- Chat: school toggles and tone selector actually change what gets sent to `/api/divination/consult`
-- Custom School Manager: created schools actually get injected into the router/consultation context, not just saved and ignored
+- ~~Rituals~~ — done. Tarot 3-card spread shuffles and flips correctly (verified via real click, CSS class transitions confirmed), Rune casting renders on tab load, I Ching coin toss builds lines progressively with correct line-by-line status. All genuinely interactive, not decorative.
+- ~~Oneiromancy~~ — done. Dream CRUD (create/read/delete), search, and tag filtering all correctly read/write `localStorage` and re-render. No issues found — this module is solid.
+- ~~Dashboard~~ — done. Timeframe switch triggers exactly one real `/api/divination/daily-insights` call per click (an apparent "double-fetch" in the network log turned out to be the log's request/response pairing, not an actual duplicate — verified by instrumenting `window.fetch` directly).
+- ~~Custom School Manager~~ — done. **Found a real bug**, see below.
+- ~~Foundation/Projections responsive grids~~ — done for the specific BaZi/Zi Wei grids (both have proper mobile breakpoint overrides in `styles.css`). Widened into a broader mobile-layout check that **found a second real bug**, see below.
+
+### Bugs found in Phase 3
+
+**1. Custom School Manager: switching the AI Oracle to a custom school is cosmetic only, not functional.**
+Clicking a custom school's button in the AI Consultation Hub's specialist selector visually highlights it correctly (the CSS `active` class toggles as expected), but `ChatEngine.activeAgent` — the actual state used when sending a message and building the request payload — never updates and silently stays on whichever built-in specialist was last genuinely selected. Root cause, confirmed live in-browser: `ChatEngine.setupAgentSelector()` attaches click listeners via a one-time `document.querySelectorAll('.agent-btn')` snapshot taken at `ChatEngine.init()` time, which runs *before* `CustomSchoolManager.init()` injects the custom buttons into the DOM — so they never get that listener. Separately, even if they did, the handler explicitly guards on `this.AGENTS[targetAgent]`, and custom school IDs are never keys in that object, so the guard would block it anyway. Custom School's own click handler (in `custom_school.js`) only updates `window.AetheriaState.activeAgent`, which `chat.js` never reads.
+Practical impact: the custom school's actual *rules content* still reaches the AI on every consultation (via `getCombinedCustomRules()`, which works independent of `activeAgent` and is correctly threaded through `api_service.js` into the `systemPrompt` sent to `server.ts` — verified that path end-to-end and it's fine). So the substance isn't lost — but the "you're now consulting the Elder Futhark Runes specialist" persona/greeting switch, and the `school` field sent to the backend, are both fake. Not fixed yet — needs either delegated event listening on the agent-selector container, or having `CustomSchoolManager`'s click handler directly call into `ChatEngine` (e.g. `window.ChatEngine.activeAgent = school.id`) plus removing the `this.AGENTS[targetAgent]` guard's hard block for unknown (custom) IDs.
+
+**2. Dashboard overflows horizontally on mobile viewports — the first screen most mobile users would see.**
+At a 375px viewport, `document.body.scrollWidth` is ~540px (confirmed after a proper reload — an earlier reading was a stale-computed-style false alarm from resizing without reloading, corrected during this audit). Traced to several Dashboard hero-section grids/rows (`.hero-action-advice-grid` — a hard 2-column grid — plus `.school-quick-card`'s grid and `.archetype-pills-row`) that aren't included in `styles.css`'s `@media (max-width: 768px)` overrides, unlike Foundation's `.ziwei-grid`/`.bazi-pillars-table`, which *are* correctly handled there. The mobile sidebar drawer itself works correctly (confirmed after reload: `transform: translateX(-100%)` does apply and the sidebar sits fully off-canvas). Not fixed yet — this is a CSS pass across the Dashboard view's grids, not a one-line fix, and worth doing alongside a fuller mobile check of the other views before calling Phase 3 fully closed.
 
 ## Phase 4 — Cleanup
 
@@ -79,4 +87,4 @@ Walk each module against its original stage requirements (matrix in PROJECT_STAT
 
 ### Suggested immediate next step
 
-Phases 1 and 2 are both done, each turning up one confirmed, fixed bug (a first-run crash, and a systematic Month Pillar miscalculation). Next up is **Phase 3** (per-module feature QA) — walking Dashboard, Foundation/Projections, Rituals, Oneiromancy, Chat, and Custom Schools against their original requirements to see what else doesn't quite work as intended. The three Phase 2 follow-ups above (solar-term precision, hexagram database, astrology fidelity) are separate, larger decisions that don't block that.
+Phases 1–3 are done. Two bugs were fixed outright (Phase 1's first-run crash, Phase 2's Month Pillar miscalculation); two more were found and logged in Phase 3 (the Custom School specialist-switch bug, the Dashboard mobile-overflow issue) since both need a slightly bigger fix than a two-line patch. Next up is **Phase 4** (cleanup — dead React scaffold, `package.json` rename, `tsc --noEmit` lint pass), unless you'd rather fix the two open Phase 3 bugs first since they're small enough to knock out quickly.

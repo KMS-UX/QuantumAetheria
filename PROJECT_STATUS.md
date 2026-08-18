@@ -32,10 +32,10 @@ calc_engine.js      dashboard.js / foundation.js /        api_service.js
                                                           no-API-key fallback)
 ```
 
-This is a **vanilla HTML/CSS/JS SPA** (`index.html` → `<script type="module" src="/app.js">`), not a React app, despite React/Tailwind being in `package.json` and `vite.config.ts`.
+This is a **vanilla HTML/CSS/JS SPA** (`index.html` → `<script type="module" src="/app.js">`), not a React app.
 
-### Dead weight: unused React scaffold
-`src/App.tsx`, `src/main.tsx`, `src/index.css` are leftover AI-Studio template boilerplate. `App.tsx` is a literal empty `<div></div>` — nothing imports or mounts it, and `index.html` never references `/src/main.tsx`. `vite.config.ts` still loads the `react()` and `tailwindcss()` plugins for a tree that's never used. `package.json`'s `name` is still `"react-example"`. None of this is load-bearing; it's cruft from the initial template.
+### Dead weight: unused React scaffold — removed in Phase 4
+`src/App.tsx`, `src/main.tsx`, `src/index.css` were leftover AI-Studio template boilerplate (`App.tsx` was a literal empty `<div></div>`, never imported or mounted — `index.html` always loaded `/app.js` directly). Deleted along with the now-unused `react`, `react-dom`, `@vitejs/plugin-react`, `lucide-react`, `@tailwindcss/vite`, `tailwindcss`, `autoprefixer`, and `motion` dependencies, the `react()`/`tailwindcss()` Vite plugins, and the inert `"jsx": "react-jsx"` tsconfig option. `package.json`'s name changed from `"react-example"` to `"aetheria"`. See ROADMAP.md Phase 4 for the full list.
 
 ## Completion matrix vs. the 7-stage guide
 
@@ -72,11 +72,15 @@ Verified `calc_engine.js` by running it directly in Node against known reference
 
 **Bug found and fixed:** the Month Pillar branch (`getSolarMonthBranchIndex`) was systematically off by exactly one solar month — **100% of the time, not an edge case.** Verified against the known CNY-2024 reference (expected 丙寅 month, code produced 丁卯) and against 4 more independently-derived boundary dates spanning the year; all 5 failed the same way before the fix and matched after. This affected the Month Pillar's stem *and* branch on every single BaZi calculation the app has ever produced. Fixed in `calc_engine.js`'s `getSolarMonthBranchIndex`; re-verified against the CNY-2024 reference (now correctly produces 甲辰-丙寅-甲辰 for year/month/day) and in a live browser run.
 
-**Known limitations (not fixed — flagged for a decision, see ROADMAP.md Phase 2 follow-ups):**
-1. **Year Pillar / solar-term boundaries use fixed calendar-day thresholds** (e.g. Li Chun hardcoded to Feb 4) rather than real solar-longitude astronomy. Actual Li Chun falls on Feb 3, 4, or 5 depending on the year (confirmed via research) — same ±1 day drift applies to all 12 month-boundary solar terms, not just Li Chun. Affects birthdates within ~1-2 days of any solar term boundary (roughly a few percent of all birthdates).
-2. **I Ching hexagram database is incomplete: only 14 of 64 traditional hexagrams have real name/judgement text.** Confirmed by code inspection and a 20,000-draw simulation — only ~21.7% of random hexagram draws hit a real database entry; the other ~78% silently fall back to a generic placeholder that's mislabeled as "Hexagram #1 (Qian)" regardless of what was actually drawn. This is a content gap, not a math bug — needs the other 50 hexagrams authored.
-3. **Western astrology beyond the Sun is low-fidelity, as originally disclosed.** Sun position uses a legitimate low-precision ephemeris (~0.01–0.02° accurate). Moon position uses only 3 truncated periodic terms (can be several degrees off). Mercury/Venus/Mars/Jupiter/Saturn positions are not real ephemeris at all — sinusoidal fudges anchored to the Sun's longitude. House placements (`"10th House"` for Sun, `"1st House"` for Moon, etc.) are hardcoded, not computed from the Ascendant — so "house" data is decorative regardless of actual birth time. This matches the original Stage 2 spec's own "Placeholder... approximation" framing, so it's a known and disclosed gap, not a hidden defect — but worth being explicit about before presenting it as authoritative to a user.
-4. **Minor:** True Solar Time's day-of-year calculation goes through JS `Date` objects using the *device's own* local timezone rather than the birth city's timezone. Because the code only ever adds/subtracts milliseconds and reads back with matching local getters, this is self-consistent in the common case — but could drift by up to a day right at a DST transition, depending on what timezone the machine running the browser is set to. Low practical impact, worth a note.
+**Minor unresolved:** True Solar Time's day-of-year calculation goes through JS `Date` objects using the *device's own* local timezone rather than the birth city's timezone. Because the code only ever adds/subtracts milliseconds and reads back with matching local getters, this is self-consistent in the common case — but could drift by up to a day right at a DST transition, depending on what timezone the machine running the browser is set to. Low practical impact, not fixed.
+
+## Phase 2 follow-ups — all fixed and verified (2026-08-18)
+
+The three gaps identified above were tackled properly rather than left as disclosed limitations. Full technical detail in [ROADMAP.md](ROADMAP.md) Phase 2 follow-ups; summary:
+
+1. **Solar-term boundaries are now computed astronomically.** Added a real solar-longitude solver (`getSolarEclipticLongitude`, `findSolarTermJD`) and rewrote both the Year Pillar's Li Chun cutover and the Month Pillar branch to derive from the sun's actual position at the birth moment, not a fixed calendar-day table. Verified against real Li Chun dates across 8 years, and confirmed the key case this was built for: two births on the same calendar day, on either side of the real Li Chun moment, now correctly receive different Year Pillars (previously impossible).
+2. **I Ching hexagram database is complete — and a second, worse copy of the same bug was found and fixed along the way.** All 64 hexagrams authored and verified in `calc_engine.js` (cross-checked against a researched King Wen table and the Unicode Consortium's own character names). While verifying live in the Rituals UI, discovered `rituals.js` maintains an entirely separate, even-more-incomplete (12/64) hexagram database that silently mislabeled undatabased results as "Hexagram 1" — reproduced live, then fixed by authoring a second, cross-validated 64-entry table matching `rituals.js`'s own richer schema. Both files now hit 100% real-entry coverage (verified via 5,000+ trial simulations), up from ~22% and ~19% respectively.
+3. **Western Astrology now uses real ephemeris for Moon, all 5 visible planets, and houses.** Moon upgraded from 3 to 13 periodic terms (~0.05° accuracy). Mercury/Venus/Mars/Jupiter/Saturn — previously not real orbital mechanics at all, just a sine wave added to the Sun's longitude — replaced with genuine heliocentric Kepler-orbit elements (Paul Schlyter's well-documented low-precision algorithm). House placements — previously hardcoded regardless of birth time — now computed via a real Equal House system from the actual Ascendant. Verified against a published ephemeris for 2000-01-01: Mercury and Venus matched to the arcminute, everything else within a fraction of a degree.
 
 ## Feature QA audit (2026-08-18)
 
@@ -92,8 +96,8 @@ Walked Rituals, Oneiromancy, Dashboard, Custom School Manager, and the Foundatio
 
 1. **Deployment target undecided**, with a real constraint to keep in mind: recent git history shows a `CNAME` file was created, updated, then deleted (GitHub Pages custom-domain flow), but this app needs a live Node process (`server.ts`, Express, Gemini SDK) for its AI endpoints — **GitHub Pages only serves static files and cannot run `server.ts`.** `.env.example` and `metadata.json` (`MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API`) point instead to AI Studio's own Cloud Run publishing flow. Stated end goal is personal use as a web app and/or Android app — see [ROADMAP.md](ROADMAP.md) Phase 0 for the path that implies.
 2. **No `GEMINI_API_KEY` configured locally** (`.env.example` only). App degrades gracefully without one (rich static fallback text, confirmed working), but the "real" AI Consultation Hub experience with actual Gemini responses is unverified.
-3. **No tests, no CI, no lint run.** `npm run lint` (`tsc --noEmit`) has not been executed against `server.ts`.
-4. **Unused React/Tailwind scaffold** adds confusion and unused dependencies (see above).
+3. ~~No tests, no CI, no lint run~~ — resolved in Phase 4: `npm run lint` (`tsc --noEmit`) now passes clean. Still no automated test suite.
+4. ~~Unused React/Tailwind scaffold~~ — resolved in Phase 4: deleted, dependencies stripped, see below.
 
 ## What's solid
 

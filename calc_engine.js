@@ -141,19 +141,53 @@ export const CalcEngine = {
     return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + dayFraction + B - 1524.5;
   },
 
-  // Solar Term (Jie Qi) Month Branch Index
-  getSolarMonthBranchIndex(month, day) {
-    // Solar terms change roughly around the 4th-8th of each month
-    // On/after the month's Jie entry: Feb(2) -> Yin (寅, index 2), Mar(3) -> Mao (卯, index 3), ...
-    // Before it: still the previous solar month, e.g. early Feb -> Chou (丑, index 1)
-    const solarTermDays = [0, 5, 4, 5, 5, 6, 7, 7, 7, 8, 8, 7, 7]; // Approximate Jie entry days per month
-    let branchIdx;
-    if (day >= solarTermDays[month]) {
-      branchIdx = month % 12; // e.g. Feb(2) on/after the 4th -> index 2 (Yin)
-    } else {
-      branchIdx = (month - 1 + 12) % 12; // e.g. Feb(2) before the 4th -> index 1 (Chou)
+  // Julian Day from a possibly negative/>24 UT-hour offset (e.g. local hour minus a positive
+  // timezone offset). Using utHours/24 directly as the day fraction avoids the sign mismatch
+  // that Math.floor()/modulo decomposition produces for negative values.
+  getJulianDayFromUTHours(year, month, day, utHours) {
+    if (month <= 2) {
+      year -= 1;
+      month += 12;
     }
-    return branchIdx;
+    const A = Math.floor(year / 100);
+    const B = 2 - A + Math.floor(A / 4);
+    const dayFraction = utHours / 24;
+    return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + dayFraction + B - 1524.5;
+  },
+
+  // Sun's apparent ecliptic longitude (degrees, 0-360) at a given Julian Day.
+  // Low-precision series (~0.01-0.02 deg accuracy), same formula used for Western astrology.
+  getSolarEclipticLongitude(jd) {
+    const T = (jd - 2451545.0) / 36525.0;
+    const L0 = (280.46646 + 36000.76983 * T) % 360;
+    const M_sun = (357.52911 + 35999.05029 * T) * (Math.PI / 180);
+    const C_sun = (1.914602 - 0.004817 * T) * Math.sin(M_sun) + (0.019993 - 0.000101 * T) * Math.sin(2 * M_sun) + 0.000289 * Math.sin(3 * M_sun);
+    return (L0 + C_sun + 360) % 360;
+  },
+
+  // Finds the Julian Day nearest `seedJD` at which the sun's ecliptic longitude equals
+  // `targetLongitudeDeg` — i.e. the exact moment a solar term (Jie Qi) begins. Newton's method
+  // using the sun's near-constant mean daily motion (~0.9856 deg/day) converges in a few steps.
+  findSolarTermJD(targetLongitudeDeg, seedJD) {
+    const MEAN_DAILY_MOTION = 360 / 365.2422;
+    let jd = seedJD;
+    for (let i = 0; i < 8; i++) {
+      const lon = this.getSolarEclipticLongitude(jd);
+      let diff = targetLongitudeDeg - lon;
+      diff = ((diff + 180) % 360 + 360) % 360 - 180; // normalize to (-180, 180]
+      if (Math.abs(diff) < 0.0005) break;
+      jd += diff / MEAN_DAILY_MOTION;
+    }
+    return jd;
+  },
+
+  // Solar Term (Jie Qi) Month Branch Index — derived from the sun's real ecliptic longitude
+  // at the given Julian Day, not a fixed calendar-day lookup table. The 12 "Jie" boundaries
+  // (Li Chun, Jing Zhe, Qing Ming, ...) are exactly 30 degrees apart starting at 315 deg (Li Chun).
+  getSolarMonthBranchIndex(jd) {
+    const sunLon = this.getSolarEclipticLongitude(jd);
+    const sectorOffset = Math.floor((((sunLon - 315) % 360 + 360) % 360) / 30);
+    return (2 + sectorOffset) % 12; // 2 = Yin's index in EARTHLY_BRANCHES (Li Chun sector)
   },
 
   calculateBaZi(birthDate, birthTime, longitude, timezoneOffsetHours, useTST = true) {
@@ -171,12 +205,21 @@ export const CalcEngine = {
     const [year, month, day] = activeDate.split('-').map(Number);
     const [hours, minutes] = activeTime.split(':').map(Number);
 
+    // Real UT moment of birth (independent of the True Solar Time toggle above, which is a
+    // BaZi-specific civil-clock adjustment, not an astronomical UT conversion) — used to find
+    // this birth's true position relative to the sun's real ecliptic longitude for the Year
+    // and Month Pillar solar-term boundaries.
+    const [rawYear, rawMonth, rawDay] = birthDate.split('-').map(Number);
+    const [rawHours, rawMinutes] = (birthTime || "12:00").split(':').map(Number);
+    const utHours = rawHours + rawMinutes / 60 - timezoneOffsetHours;
+    const birthJD = this.getJulianDayFromUTHours(rawYear, rawMonth, rawDay, utHours);
+
     // 1. Year Pillar:
-    // Chinese Solar Year begins at Li Chun (approx Feb 4).
-    let baziYear = year;
-    if (month < 2 || (month === 2 && day < 4)) {
-      baziYear = year - 1;
-    }
+    // Chinese Solar Year begins at the exact moment of Li Chun (sun's ecliptic longitude = 315 deg),
+    // which falls on Feb 3, 4, or 5 depending on the year — found astronomically, not assumed fixed.
+    const liChunSeedJD = this.getJulianDay(rawYear, 2, 4, 12, 0);
+    const liChunJD = this.findSolarTermJD(315, liChunSeedJD);
+    let baziYear = birthJD < liChunJD ? rawYear - 1 : rawYear;
     // 4 AD was Jia Zi (0, 0)
     const yearStemIdx = (baziYear - 4) % 10;
     const yearBranchIdx = (baziYear - 4) % 12;
@@ -186,7 +229,7 @@ export const CalcEngine = {
     // 2. Month Pillar:
     // Five Tigers Seeking Month (Wu Hu Dun):
     // Year Stem: Jia/Ji (0,5) -> Month 1 is Bing(2); Yi/Geng(1,6) -> Wu(4); Bing/Xin(2,7) -> Geng(6); Ding/Ren(3,8) -> Ren(8); Wu/Gui(4,9) -> Jia(0)
-    const monthBranchIdx = this.getSolarMonthBranchIndex(month, day);
+    const monthBranchIdx = this.getSolarMonthBranchIndex(birthJD);
     const monthBranch = this.EARTHLY_BRANCHES[monthBranchIdx];
     
     // Month sequence from Yin (index 2): Yin=0, Mao=1, Chen=2 ...
@@ -336,30 +379,132 @@ export const CalcEngine = {
     };
   },
 
+  // --- LOW-PRECISION PLANETARY EPHEMERIS (real orbital-elements method) ---
+  // Algorithm reference: Paul Schlyter, "How to compute planetary positions"
+  // (stjarnhimlen.se/comp/ppcomp.html) — heliocentric Kepler-orbit elements combined with
+  // Earth's own heliocentric position for geocentric longitude, accurate to ~1 arcminute
+  // for planets over roughly 1800-2050. Elements: N=ascending node, i=inclination,
+  // w=argument of perihelion, a=semi-major axis (AU), e=eccentricity, M=mean anomaly;
+  // each [base, dailyRate] pair referenced to day d = 0 at 1999-12-31 00:00 UT.
+  PLANET_ELEMENTS: {
+    Mercury: { N: [48.3313, 3.24587e-5], i: [7.0047, 5.00e-8], w: [29.1241, 1.01444e-5], a: 0.387098, e: [0.205635, 5.59e-10], M: [168.6562, 4.0923344368] },
+    Venus: { N: [76.6799, 2.46590e-5], i: [3.3946, 2.75e-8], w: [54.8910, 1.38374e-5], a: 0.723330, e: [0.006773, -1.302e-9], M: [48.0052, 1.6021302244] },
+    Mars: { N: [49.5574, 2.11081e-5], i: [1.8497, -1.78e-8], w: [286.5016, 2.92961e-5], a: 1.523688, e: [0.093405, 2.516e-9], M: [18.6021, 0.5240207766] },
+    Jupiter: { N: [100.4542, 2.76854e-5], i: [1.3030, -1.557e-7], w: [273.8777, 1.64505e-5], a: 5.20256, e: [0.048498, 4.469e-9], M: [19.8950, 0.0830853001] },
+    Saturn: { N: [113.6634, 2.38980e-5], i: [2.4886, -1.081e-7], w: [339.3939, 2.97661e-5], a: 9.55475, e: [0.055546, -9.499e-9], M: [316.9670, 0.0334442282] }
+  },
+
+  // Solves Kepler's equation E - e*sin(E) = M for eccentric anomaly E (degrees).
+  solveKeplerEquation(mDeg, e) {
+    const RAD = Math.PI / 180;
+    let E = mDeg + (e * 180 / Math.PI) * Math.sin(mDeg * RAD) * (1 + e * Math.cos(mDeg * RAD));
+    for (let i = 0; i < 8; i++) {
+      const delta = (E - (e * 180 / Math.PI) * Math.sin(E * RAD) - mDeg) / (1 - e * Math.cos(E * RAD));
+      E -= delta;
+      if (Math.abs(delta) < 1e-6) break;
+    }
+    return E;
+  },
+
+  // Heliocentric ecliptic rectangular coordinates (AU) for a planet's orbital elements at day-number d.
+  getPlanetHeliocentricXYZ(elements, d) {
+    const RAD = Math.PI / 180;
+    const N = elements.N[0] + elements.N[1] * d;
+    const i = elements.i[0] + elements.i[1] * d;
+    const w = elements.w[0] + elements.w[1] * d;
+    const a = elements.a;
+    const e = elements.e[0] + elements.e[1] * d;
+    const M = elements.M[0] + elements.M[1] * d;
+
+    const E = this.solveKeplerEquation(M, e);
+    const xv = a * (Math.cos(E * RAD) - e);
+    const yv = a * (Math.sqrt(1 - e * e) * Math.sin(E * RAD));
+    const v = Math.atan2(yv, xv) * (180 / Math.PI);
+    const r = Math.sqrt(xv * xv + yv * yv);
+
+    const vwRad = (v + w) * RAD;
+    const nRad = N * RAD;
+    const iRad = i * RAD;
+    return {
+      x: r * (Math.cos(nRad) * Math.cos(vwRad) - Math.sin(nRad) * Math.sin(vwRad) * Math.cos(iRad)),
+      y: r * (Math.sin(nRad) * Math.cos(vwRad) + Math.cos(nRad) * Math.sin(vwRad) * Math.cos(iRad)),
+      z: r * (Math.sin(vwRad) * Math.sin(iRad))
+    };
+  },
+
+  // Earth's heliocentric ecliptic (x,y) via the Sun's own orbital elements (N=0, i=0 by definition).
+  getEarthHeliocentricXY(d) {
+    const RAD = Math.PI / 180;
+    const w = 282.9404 + 4.70935e-5 * d;
+    const e = 0.016709 - 1.151e-9 * d;
+    const M = 356.0470 + 0.9856002585 * d;
+    const E = this.solveKeplerEquation(M, e);
+    const xv = Math.cos(E * RAD) - e;
+    const yv = Math.sqrt(1 - e * e) * Math.sin(E * RAD);
+    const v = Math.atan2(yv, xv) * (180 / Math.PI);
+    const r = Math.sqrt(xv * xv + yv * yv);
+    const vwRad = (v + w) * RAD;
+    return { x: r * Math.cos(vwRad), y: r * Math.sin(vwRad) };
+  },
+
+  // Geocentric ecliptic longitude (degrees, 0-360) for a named planet at Julian Day jd.
+  getPlanetGeocentricLongitude(planetName, jd) {
+    const d = jd - 2451543.5; // Schlyter epoch: day 0 = 1999-12-31 00:00 UT
+    const sun = this.getEarthHeliocentricXY(d);
+    const helio = this.getPlanetHeliocentricXYZ(this.PLANET_ELEMENTS[planetName], d);
+    const xg = helio.x + sun.x;
+    const yg = helio.y + sun.y;
+    return ((Math.atan2(yg, xg) * (180 / Math.PI)) % 360 + 360) % 360;
+  },
+
+  HOUSE_ORDINALS: ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"],
+
+  // Equal House system: House 1 begins at the Ascendant, each subsequent house is +30 degrees.
+  houseLabel(bodyLon, ascLon) {
+    const offset = (((bodyLon - ascLon) % 360) + 360) % 360;
+    const houseNum = Math.floor(offset / 30);
+    return `${this.HOUSE_ORDINALS[houseNum]} House`;
+  },
+
   calculateWesternAstrology(birthDate, birthTime, latitude, longitude, timezoneOffsetHours) {
     const [year, month, day] = birthDate.split('-').map(Number);
     const [hours, minutes] = (birthTime || "12:00").split(':').map(Number);
 
     // Universal Time (UT) in hours
     const utHours = hours + minutes / 60 - timezoneOffsetHours;
-    const jd = this.getJulianDay(year, month, day, Math.floor(utHours), (utHours % 1) * 60);
+    const jd = this.getJulianDayFromUTHours(year, month, day, utHours);
 
     // Julian centuries from J2000.0
     const T = (jd - 2451545.0) / 36525.0;
 
     // 1. Solar Ecliptic Longitude (Low-precision Ephemeris accurate to within ~0.05°)
-    const L0 = (280.46646 + 36000.76983 * T) % 360; // Geometric mean longitude of Sun
-    const M_sun = (357.52911 + 35999.05029 * T) * (Math.PI / 180); // Mean anomaly
-    const C_sun = (1.914602 - 0.004817 * T) * Math.sin(M_sun) + (0.019993 - 0.000101 * T) * Math.sin(2 * M_sun) + 0.000289 * Math.sin(3 * M_sun);
-    const sunLon = (L0 + C_sun + 360) % 360;
+    const sunLon = this.getSolarEclipticLongitude(jd);
     const sunPlacement = this.degToSign(sunLon);
 
-    // 2. Lunar Ecliptic Longitude approximation
-    const L_moon = (218.316 + 481267.8813 * T) % 360;
-    const M_moon = (134.963 + 477198.8676 * T) * (Math.PI / 180);
-    const F_moon = (93.272 + 483202.0175 * T) * (Math.PI / 180);
-    const D_moon = (297.850 + 445267.1114 * T) * (Math.PI / 180);
-    const moonLon = (L_moon + 6.289 * Math.sin(M_moon) - 1.274 * Math.sin(M_moon - 2 * D_moon) + 0.658 * Math.sin(2 * D_moon) + 360) % 360;
+    // 2. Lunar Ecliptic Longitude — truncated Meeus low-precision series (top ~13 periodic terms),
+    // accurate to roughly 0.05 deg, a substantial upgrade from a 3-term approximation.
+    const L_moon = 218.3164477 + 481267.88123421 * T; // mean longitude
+    const D_moon = (297.8501921 + 445267.1114034 * T) * (Math.PI / 180); // mean elongation from Sun
+    const M_moon = (134.9633964 + 477198.8675055 * T) * (Math.PI / 180); // mean anomaly
+    const F_moon = (93.2720950 + 483202.0175233 * T) * (Math.PI / 180); // argument of latitude
+    const Mm_sun = (357.5291092 + 35999.0502909 * T) * (Math.PI / 180); // Sun's mean anomaly
+
+    const moonLonCorrection =
+        6.288774 * Math.sin(M_moon)
+      + 1.274027 * Math.sin(2 * D_moon - M_moon)
+      + 0.658314 * Math.sin(2 * D_moon)
+      + 0.213618 * Math.sin(2 * M_moon)
+      - 0.185116 * Math.sin(Mm_sun)
+      - 0.114332 * Math.sin(2 * F_moon)
+      + 0.058793 * Math.sin(2 * D_moon - 2 * M_moon)
+      + 0.057066 * Math.sin(2 * D_moon - Mm_sun - M_moon)
+      + 0.053322 * Math.sin(2 * D_moon + M_moon)
+      + 0.045758 * Math.sin(2 * D_moon - Mm_sun)
+      - 0.040923 * Math.sin(Mm_sun - M_moon)
+      - 0.034720 * Math.sin(D_moon)
+      - 0.030383 * Math.sin(Mm_sun + M_moon);
+
+    const moonLon = (((L_moon + moonLonCorrection) % 360) + 360) % 360;
     const moonPlacement = this.degToSign(moonLon);
 
     // Lunar Phase
@@ -389,12 +534,13 @@ export const CalcEngine = {
     ascLon = (ascLon + 360) % 360;
     const ascPlacement = this.degToSign(ascLon);
 
-    // 4. Inner & Outer Planets Approximations
-    const mercuryLon = (sunLon + 18 * Math.sin((T * 150 + 1) * Math.PI / 180) + 360) % 360;
-    const venusLon = (sunLon + 35 * Math.sin((T * 90 + 2) * Math.PI / 180) + 360) % 360;
-    const marsLon = (sunLon + 120 * T + 80 + 360) % 360;
-    const jupiterLon = (sunLon + 30 * T + 210 + 360) % 360;
-    const saturnLon = (sunLon + 12 * T + 45 + 360) % 360;
+    // 4. Inner & Outer Planets — real heliocentric orbital-elements ephemeris (see PLANET_ELEMENTS
+    // and getPlanetGeocentricLongitude above), not a decorative approximation of the Sun's position.
+    const mercuryLon = this.getPlanetGeocentricLongitude('Mercury', jd);
+    const venusLon = this.getPlanetGeocentricLongitude('Venus', jd);
+    const marsLon = this.getPlanetGeocentricLongitude('Mars', jd);
+    const jupiterLon = this.getPlanetGeocentricLongitude('Jupiter', jd);
+    const saturnLon = this.getPlanetGeocentricLongitude('Saturn', jd);
 
     return {
       sun: sunPlacement,
@@ -402,13 +548,13 @@ export const CalcEngine = {
       moonPhase: moonPhaseName,
       ascendant: ascPlacement,
       planets: [
-        { name: "Sun", glyph: "☉", ...sunPlacement, house: "10th House", dignity: "Sovereign Essence" },
-        { name: "Moon", glyph: "☽", ...moonPlacement, house: "1st House", dignity: "Subconscious Pulse" },
-        { name: "Mercury", glyph: "☿", ...this.degToSign(mercuryLon), house: "11th House", dignity: "Rational Mind" },
-        { name: "Venus", glyph: "♀", ...this.degToSign(venusLon), house: "9th House", dignity: "Aesthetic Harmony" },
-        { name: "Mars", glyph: "♂", ...this.degToSign(marsLon), house: "6th House", dignity: "Vital Drive" },
-        { name: "Jupiter", glyph: "♃", ...this.degToSign(jupiterLon), house: "5th House", dignity: "Great Benefic" },
-        { name: "Saturn", glyph: "♄", ...this.degToSign(saturnLon), house: "7th House", dignity: "Great Malefic / Builder" }
+        { name: "Sun", glyph: "☉", ...sunPlacement, house: this.houseLabel(sunLon, ascLon), dignity: "Sovereign Essence" },
+        { name: "Moon", glyph: "☽", ...moonPlacement, house: this.houseLabel(moonLon, ascLon), dignity: "Subconscious Pulse" },
+        { name: "Mercury", glyph: "☿", ...this.degToSign(mercuryLon), house: this.houseLabel(mercuryLon, ascLon), dignity: "Rational Mind" },
+        { name: "Venus", glyph: "♀", ...this.degToSign(venusLon), house: this.houseLabel(venusLon, ascLon), dignity: "Aesthetic Harmony" },
+        { name: "Mars", glyph: "♂", ...this.degToSign(marsLon), house: this.houseLabel(marsLon, ascLon), dignity: "Vital Drive" },
+        { name: "Jupiter", glyph: "♃", ...this.degToSign(jupiterLon), house: this.houseLabel(jupiterLon, ascLon), dignity: "Great Benefic" },
+        { name: "Saturn", glyph: "♄", ...this.degToSign(saturnLon), house: this.houseLabel(saturnLon, ascLon), dignity: "Great Malefic / Builder" }
       ]
     };
   },
@@ -439,7 +585,57 @@ export const CalcEngine = {
     "111000": { num: 11, name: "Tai (泰) — Peace & Flourishing", symbol: "䷊", judgement: "Heaven and earth commune. Small departures, great arrivals. Supreme fortune." },
     "000111": { num: 12, name: "Pi (否) — Stagnation & Standstill", symbol: "䷋", judgement: "Heaven and earth disconnect. The wise withdraw into quiet virtue rather than seeking worldly acclaim." },
     "101111": { num: 13, name: "Tong Ren (同人) — Fellowship", symbol: "䷌", judgement: "Fire blazing in the open sky. Universal kinship and transparent alliance cross great waters." },
-    "111101": { num: 14, name: "Da You (大有) — Great Possession", symbol: "䷍", judgement: "Sun high in the zenith. Radiant abundance channeled with humility and benevolence." }
+    "111101": { num: 14, name: "Da You (大有) — Great Possession", symbol: "䷍", judgement: "Sun high in the zenith. Radiant abundance channeled with humility and benevolence." },
+    "001000": { num: 15, name: "Qian (謙) — Modesty", symbol: "䷎", judgement: "Mountain concealed within Earth. Humility elevates; the modest sage who abases outward pride harvests boundless respect and enduring fortune." },
+    "000100": { num: 16, name: "Yu (豫) — Enthusiasm", symbol: "䷏", judgement: "Thunder emerging from Earth. Joyful readiness stirs the collective; align intention with rhythm before decisive movement, and multitudes will follow." },
+    "100110": { num: 17, name: "Sui (隨) — Following", symbol: "䷐", judgement: "Lake trailing behind Thunder. Adaptive surrender to the moment's current brings harmonious accord; release rigid control and flow toward what truly beckons." },
+    "011001": { num: 18, name: "Gu (蠱) — Decay", symbol: "䷑", judgement: "Mountain stilling Wind, a stagnant vessel. Corruption accumulated through neglect demands courageous remedy — three days before, three days after, act with resolve." },
+    "110000": { num: 19, name: "Lin (臨) — Approach", symbol: "䷒", judgement: "Earth overlooking Lake, rising influence. Authority nears its zenith; nurture with generous oversight, for what approaches with integrity brings great fortune." },
+    "000011": { num: 20, name: "Guan (觀) — Contemplation", symbol: "䷓", judgement: "Wind moving over Earth, a watchful vantage. Still observation reveals hidden currents; the sage who studies before acting perceives the true shape of destiny." },
+    "100101": { num: 21, name: "Shi He (噬嗑) — Biting Through", symbol: "䷔", judgement: "Fire and Thunder combined, obstruction bitten through. Firm decisive judgment, like teeth closing on obstruction, dissolves what blocks union — apply the law without hesitation." },
+    "101001": { num: 22, name: "Bi (賁) — Grace", symbol: "䷕", judgement: "Fire glowing beneath Mountain, radiant embellishment. Beauty and form refine the essential; adorn with elegance, yet remember substance must precede ornament." },
+    "000001": { num: 23, name: "Bo (剝) — Splitting Apart", symbol: "䷖", judgement: "Mountain resting upon Earth, slow erosion. Decline advances by inches; the wise do not resist collapse directly, but withdraw and await the turning tide." },
+    "100000": { num: 24, name: "Fu (復) — Return", symbol: "䷗", judgement: "Thunder stirring beneath Earth, the solstice point. The single yang line returns; after the depth of winter, renewal quickens — retreat, rest, then re-emerge." },
+    "100111": { num: 25, name: "Wu Wang (无妄) — Innocence", symbol: "䷘", judgement: "Heaven moving above Thunder, spontaneous integrity. Acting without ulterior calculation invites heaven's own accord; contrived ambition invites misfortune where pure intention would prosper." },
+    "111001": { num: 26, name: "Da Xu (大畜) — Great Taming", symbol: "䷙", judgement: "Heaven contained by Mountain, vast restrained potential. Discipline accumulates immense latent power; nourish inner strength before its grand release." },
+    "100001": { num: 27, name: "Yi (頤) — Nourishment", symbol: "䷚", judgement: "Mountain over Thunder, the open jaw. Attend to what you feed body, mind, and word; provide for others as you would be nourished yourself." },
+    "011110": { num: 28, name: "Da Guo (大過) — Great Exceeding", symbol: "䷛", judgement: "Lake submerging Wind, the ridgepole sagging. Extraordinary pressure bends the central beam near breaking; extraordinary times call for solitary, resolute action." },
+    "010010": { num: 29, name: "Kan (坎) — The Abysmal", symbol: "䷜", judgement: "Water repeated, danger upon danger. Flow like water through the chasm's peril: sincerity and constant movement carry the sage safely through repeated trial." },
+    "101101": { num: 30, name: "Li (離) — The Clinging", symbol: "䷝", judgement: "Fire doubled, radiant dependency. Brightness clings to what sustains it; cultivate luminous clarity and devoted attachment to what is genuinely worthy." },
+    "001110": { num: 31, name: "Xian (咸) — Influence", symbol: "䷞", judgement: "Lake resting upon Mountain, mutual attraction. Sincere, spontaneous resonance between hearts precedes formal union; let feeling arise before force asserts itself." },
+    "011100": { num: 32, name: "Heng (恆) — Duration", symbol: "䷟", judgement: "Thunder moving above Wind, constant motion. Enduring relationships and paths are sustained not by rigidity but by rhythmic, adaptable constancy through change." },
+    "001111": { num: 33, name: "Dun (遯) — Retreat", symbol: "䷠", judgement: "Heaven withdrawing above Mountain. When lesser forces ascend, the superior person retreats with dignified timing, preserving strength rather than exhausting it in vain resistance." },
+    "111100": { num: 34, name: "Da Zhuang (大壯) — Great Power", symbol: "䷡", judgement: "Thunder above Heaven, forceful ascent. Great strength must be tempered by propriety; power without restraint shatters against the very obstacles it seeks to overcome." },
+    "000101": { num: 35, name: "Jin (晉) — Progress", symbol: "䷢", judgement: "Fire rising over Earth, dawn advancing. Like the sun ascending over the plain, virtuous advancement is recognized and rewarded by those above." },
+    "101000": { num: 36, name: "Ming Yi (明夷) — Darkening of the Light", symbol: "䷣", judgement: "Fire buried within Earth. Brilliance obscured by adversity calls for inner steadfastness; conceal true light until the shadow of oppression passes." },
+    "101011": { num: 37, name: "Jia Ren (家人) — The Family", symbol: "䷤", judgement: "Wind kindled by Fire, domestic order. Correct roles rightly held within the hearth radiate outward; the well-ordered household is the seed of the well-ordered world." },
+    "110101": { num: 38, name: "Kui (睽) — Opposition", symbol: "䷥", judgement: "Fire and Lake, diverging polarities. Estrangement in small matters need not prevent eventual union; seek common ground even amid apparent contradiction." },
+    "001010": { num: 39, name: "Jian (蹇) — Obstruction", symbol: "䷦", judgement: "Water above Mountain, the difficult pass. Obstacles bar the direct path; pause, gather wise counsel, and seek the indirect route toward eventual crossing." },
+    "010100": { num: 40, name: "Jie (解) — Deliverance", symbol: "䷧", judgement: "Thunder freeing above Water, storm clearing. Tension dissolves like ice at spring's first thunder; forgive swiftly and act to release what has long bound you." },
+    "110001": { num: 41, name: "Sun (損) — Decrease", symbol: "䷨", judgement: "Mountain above Lake, sincere sacrifice. What is diminished below may enrich what is above; sincere simplicity and restraint transform loss into hidden gain." },
+    "100011": { num: 42, name: "Yi (益) — Increase", symbol: "䷩", judgement: "Wind and Thunder combined, mutual reinforcement. Generosity flowing downward from above multiplies benefit for all; the moment favors bold, beneficial undertakings." },
+    "111110": { num: 43, name: "Guai (夬) — Breakthrough", symbol: "䷪", judgement: "Lake rising to Heaven's height, resolute decree. One last obstruction remains; announce your resolve openly and decisively, though firmness must be paired with fairness." },
+    "011111": { num: 44, name: "Gou (姤) — Coming to Meet", symbol: "䷫", judgement: "Heaven beneath Wind, unforeseen encounter. A potent influence arises from below; approach beguiling coincidences with clear-eyed discernment rather than impulsive embrace." },
+    "000110": { num: 45, name: "Cui (萃) — Gathering", symbol: "䷬", judgement: "Lake collecting above Earth, congregation. Multitudes gather beneath rightful authority; make ready great offerings, for unified purpose amplifies collective fortune." },
+    "011000": { num: 46, name: "Sheng (升) — Pushing Upward", symbol: "䷭", judgement: "Wind rooted in Earth, gradual ascent. Like a tree growing from the soil, sustained effort without haste carries steady advancement toward the summit." },
+    "010110": { num: 47, name: "Kun (困) — Oppression", symbol: "䷮", judgement: "Lake drained beneath Water, exhaustion. Though resources and words fail to persuade, the resolute heart's quiet integrity outlasts the season of confinement." },
+    "011010": { num: 48, name: "Jing (井) — The Well", symbol: "䷯", judgement: "Water drawn up through Wind, communal source. The well nourishes all who come, unchanged by dynasty; renew what has grown stagnant and share its depths freely." },
+    "101110": { num: 49, name: "Ge (革) — Revolution", symbol: "䷰", judgement: "Lake extinguishing Fire, transformative molting. Old forms must be shed once their season passes; revolution enacted with sincerity and proper timing wins the people's trust." },
+    "011101": { num: 50, name: "Ding (鼎) — The Cauldron", symbol: "䷱", judgement: "Wind feeding Fire, the sacred vessel. Transformation refines raw substance into nourishment; the cauldron stands firm, uniting talents to sustain the greater community." },
+    "100100": { num: 51, name: "Zhen (震) — The Arousing", symbol: "䷲", judgement: "Thunder redoubled, shock and awakening. Startling upheaval tests composure; the steady heart trembles yet does not lose the sacrificial spoon, and emerges wiser." },
+    "001001": { num: 52, name: "Gen (艮) — Keeping Still", symbol: "䷳", judgement: "Mountain doubled, immovable stillness. True stillness arises when the back is turned even to one's own desires; in silence untouched by longing, clarity is restored." },
+    "001011": { num: 53, name: "Jian (漸) — Development", symbol: "䷴", judgement: "Wind rooted above Mountain, gradual infiltration. Like the wild goose advancing by stages toward the shore, patient, proper progression secures a lasting union." },
+    "110100": { num: 54, name: "Gui Mei (歸妹) — The Marrying Maiden", symbol: "䷵", judgement: "Thunder above Lake, subordinate union. Entering a bond from a position lacking full standing demands especial care and restraint to avoid eventual regret." },
+    "101100": { num: 55, name: "Feng (豐) — Abundance", symbol: "䷶", judgement: "Thunder blazing above Fire, zenith fullness. At the sun's height shadows still fall; abundance achieved must be wielded with clarity before its inevitable waning." },
+    "001101": { num: 56, name: "Lu (旅) — The Wanderer", symbol: "䷷", judgement: "Fire atop Mountain, the traveler's path. Away from home, small matters bring fortune through caution and modesty; the wanderer prospers by adaptability, not conquest." },
+    "011011": { num: 57, name: "Xun (巽) — The Gentle", symbol: "䷸", judgement: "Wind doubled, penetrating persistence. Gentle, persistent influence, like wind through every crevice, achieves what force cannot; small steady steps yield great sway." },
+    "110110": { num: 58, name: "Dui (兌) — The Joyous", symbol: "䷹", judgement: "Lake doubled, mirrored delight. Shared joy multiplies when sincere; open, joyous exchange between hearts, tempered by firm inner integrity, brings mutual encouragement." },
+    "010011": { num: 59, name: "Huan (渙) — Dispersion", symbol: "䷺", judgement: "Wind scattering over Water, dissolving separation. Estrangement and fragmentation are dispersed through selfless unifying ritual; gather the scattered by dissolving rigid self-interest." },
+    "110010": { num: 60, name: "Jie (節) — Limitation", symbol: "䷻", judgement: "Water contained by Lake, disciplined measure. Boundaries wisely set, like the joints of bamboo, allow sustainable flow; excessive restriction, like excessive freedom, brings hardship." },
+    "110011": { num: 61, name: "Zhong Fu (中孚) — Inner Truth", symbol: "䷼", judgement: "Wind moving over Lake, sincere resonance. Inner sincerity moves even the unseen — like a crane's call answered by its unseen mate — trust unlocks great crossings." },
+    "001100": { num: 62, name: "Xiao Guo (小過) — Small Exceeding", symbol: "䷽", judgement: "Thunder above Mountain, cautious deviation. Modest, careful attention to small matters succeeds where grand ambition falters; the flying bird should not soar too high." },
+    "101010": { num: 63, name: "Ji Ji (既濟) — After Completion", symbol: "䷾", judgement: "Water above Fire, poised equilibrium. Order achieved is inherently fragile; the wise remain vigilant at the moment of success, lest careful balance dissolve into disorder." },
+    "010101": { num: 64, name: "Wei Ji (未濟) — Before Completion", symbol: "䷿", judgement: "Fire above Water, threshold unmet. The great work approaches its final crossing yet remains unfinished; caution at the threshold ensures the fox's tail stays dry." }
   },
 
   // Perform authentic 3-coin toss calculation

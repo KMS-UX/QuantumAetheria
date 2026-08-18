@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aetheria — Multi-School Divination & Fate Matrix</title>
+    <meta name="description" content="Aetheria: Comprehensive esoteric and astrological fate framework integrating Western Astrology, BaZi, Zi Wei Dou Shu, I Ching, Tarot, Runes, and AI High-Thinking Oracle." />
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="app-root">
+      
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar" id="sidebar">
+        <div class="brand-container">
+          <div class="brand-icon">
+            <i data-lucide="compass"></i>
+          </div>
+          <div class="brand-info">
+            <h1>Aetheria</h1>
+            <span>Fate & Divination Matrix</span>
+          </div>
+        </div>
+
+        <nav class="nav-menu" id="nav-menu">
+          <span class="nav-section-title">Cycles & Time</span>
+          
+          <button class="nav-btn active" data-view="view-dashboard" id="nav-dashboard">
+            <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
+            <span class="nav-label">Dashboard (Short-Term)</span>
+          </button>
+          
+          <button class="nav-btn" data-view="view-midlong" id="nav-midlong">
+            <span class="nav-icon"><i data-lucide="calendar-range"></i></span>
+            <span class="nav-label">Mid & Long-Term Cycles</span>
+          </button>
+
+          <span class="nav-section-title">Core Systems</span>
+
+          <button class="nav-btn" data-view="view-foundation" id="nav-foundation">
+            <span class="nav-icon"><i data-lucide="sparkles"></i></span>
+            <span class="nav-label">Foundation & Life Analysis</span>
+            <span class="badge-pill">3 Charts</span>
+          </button>
+
+          <button class="nav-btn" data-view="view-rituals" id="nav-rituals">
+            <span class="nav-icon"><i data-lucide="wand-2"></i></span>
+            <span class="nav-label">Interactive Rituals</span>
+          </button>
+
+          <button class="nav-btn" data-view="view-oneiromancy" id="nav-oneiromancy">
+            <span class="nav-icon"><i data-lucide="moon-star"></i></span>
+            <span class="nav-label">Oneiromancy & Dreams</span>
+          </button>
+
+          <span class="nav-section-title">Intelligence & Tools</span>
+
+          <button class="nav-btn" data-view="view-ai-consult" id="nav-ai-consult">
+            <span class="nav-icon"><i data-lucide="bot"></i></span>
+            <span class="nav-label">AI Consultation Hub</span>
+            <span class="badge-pill">Thinking</span>
+          </button>
+
+          <button class="nav-btn" data-view="view-custom-schools" id="nav-custom-schools">
+            <span class="nav-icon"><i data-lucide="book-open-check"></i></span>
+            <span class="nav-label">Custom School Manager</span>
+          </button>
+
+          <button class="nav-btn" data-view="view-settings" id="nav-settings">
+            <span class="nav-icon"><i data-lucide="settings"></i></span>
+            <span class="nav-label">Settings & Profile</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="tst-status-compact" title="True Solar Time Engine Running">
+            <div class="pulse-indicator"></div>
+            <span>TST Active Sync</span>
+          </div>
+          <button class="header-action-btn" id="btn-quick-sync" style="padding: 4px 8px; font-size: 0.75rem;" title="Recalculate Ephemeris">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN WRAPPER -->
+      <div class="main-wrapper">
+        
+        <!-- TOP STICKY HEADER -->
+        <header class="top-header" id="top-header">
+          <div class="header-left">
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle Navigation">
+              <i data-lucide="menu"></i>
+            </button>
+            
+            <div class="profile-chip" id="header-profile-chip" role="button" tabindex="0" title="Click to edit natal profile & recalculate systems">
+              <div class="profile-avatar-glyph" id="header-avatar-glyph">A</div>
+              <div class="profile-meta-text">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="profile-name" id="header-profile-name">Astraea Vane</span>
+                  <i data-lucide="pencil" style="width: 12px; height: 12px; color: var(--gold-primary); opacity: 0.7;"></i>
+                </div>
+                <span class="profile-sigil" id="header-profile-sigil">Sun: ♌ Leo | BaZi: 甲辰 Day | TST: 12:04 PM</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="header-center">
+            <div class="transit-pills-row" id="transit-pills-row">
+              <div class="transit-pill lunar" id="pill-lunar" title="Lunar Phase & Sign">
+                <i data-lucide="moon" style="width:14px; height:14px;"></i>
+                <span id="txt-lunar-pill">🌖 Waxing Gibbous in Scorpio ♏</span>
+              </div>
+              <div class="transit-pill solar" id="pill-solar" title="Solar Ingress">
+                <i data-lucide="sun" style="width:14px; height:14px;"></i>
+                <span id="txt-solar-pill">☉ Sun in Leo 24°</span>
+              </div>
+              <div class="transit-pill bazi-year" id="pill-bazi" title="BaZi Annual Pillar">
+                <i data-lucide="sparkle" style="width:14px; height:14px;"></i>
+                <span id="txt-bazi-pill">🐉 Wood Dragon Year (Jia Chen)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <div class="tst-clock-box" id="tst-clock-box" title="Calculated using Equation of Time + Longitude offset">
+              <span class="tst-label">True Solar Time (TST)</span>
+              <span class="tst-time-display" id="header-tst-time">--:--:-- TST</span>
+            </div>
+
+            <button class="header-action-btn" id="btn-open-profile-modal" title="Edit Birth Coordinates">
+              <i data-lucide="user" style="width: 15px; height: 15px;"></i>
+              <span>Profile</span>
+            </button>
+
+            <button class="header-action-btn" id="btn-quick-divine" title="Cast Instant Daily Divination">
+              <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i>
+              <span>Instant Oracle</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- MAIN VIEWPORT ROUTER CONTAINER -->
+        <main class="content-viewport" id="content-viewport">
+          
+          <!-- 1. VIEW: DASHBOARD (Short-Term: Today / Week / Month) -->
+          <section class="view-section active-view" id="view-dashboard">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Celestial & Qi Dashboard</h2>
+                <p>Real-time synthesis of transits, day masters, hexagram rhythms, and immediate guidance.</p>
+              </div>
+              <div class="sub-tabs-bar" id="dashboard-subtabs">
+                <button class="sub-tab-btn active" data-timeframe="today">
+                  <i data-lucide="sun" style="width: 14px; height: 14px;"></i> Today's Qi
+                </button>
+                <button class="sub-tab-btn" data-timeframe="week">
+                  <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> This Week
+                </button>
+                <button class="sub-tab-btn" data-timeframe="month">
+                  <i data-lucide="moon" style="width: 14px; height: 14px;"></i> This Month
+                </button>
+              </div>
+            </div>
+
+            <!-- OVERVIEW HERO CARD WITH RADIAL ENERGY GAUGE & ARCHETYPES -->
+            <div class="hero-overview-card">
+              <!-- SVG Gradient Definition -->
+              <svg width="0" height="0" style="position: absolute;">
+                <defs>
+                  <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#d4af37" />
+                    <stop offset="60%" stop-color="#00e5ff" />
+                    <stop offset="100%" stop-color="#8a2be2" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              <div class="hero-overview-grid">
+                <!-- Radial Gauge -->
+                <div class="radial-gauge-wrapper">
+                  <svg class="radial-gauge-svg" viewBox="0 0 130 130">
+                    <circle class="radial-track" cx="65" cy="65" r="54" />
+                    <circle class="radial-progress" id="radial-gauge-progress" cx="65" cy="65" r="54" />
+                  </svg>
+                  <div class="radial-center-content">
+                    <span class="radial-score-num" id="radial-energy-score-num">88</span>
+                    <span class="radial-score-label">Energy Index</span>
+                    <span class="radial-status-badge" id="radial-score-badge">✦ Peak Harmony</span>
+                  </div>
+                </div>
+
+                <!-- Right Side: Archetypes & Synthesis Narrative -->
+                <div class="dashboard-dynamic-content">
+                  <div class="archetype-pills-row" id="dashboard-archetype-pills">
+                    <span class="archetype-pill"><span>✦</span> Strategic Reflection</span>
+                    <span class="archetype-pill cyan"><span>✦</span> Fire Element High</span>
+                    <span class="archetype-pill violet"><span>✦</span> Saturn Transit Active</span>
+                  </div>
+
+                  <p class="hero-narrative-text" id="dashboard-hero-narrative">
+                    The convergence of today's True Solar noon and the Yang Fire (Bing) pillar creates exceptional momentum for negotiations, creative manifestation, and spiritual alchemy.
+                  </p>
+
+                  <div class="hero-action-advice-grid">
+                    <div class="advice-item">
+                      <div class="advice-icon-wrap favorable">
+                        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.72rem; color: var(--emerald-element); font-weight: 700; text-transform: uppercase;">Tactical Ingress</div>
+                        <div id="dashboard-tactical-do" style="color: var(--text-primary); font-size: 0.82rem; margin-top: 2px;">
+                          Schedule high-stakes creative synthesis during the Golden Solar Hour (11:00 - 13:00 TST).
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="advice-item">
+                      <div class="advice-icon-wrap caution">
+                        <i data-lucide="alert-triangle" style="width: 14px; height: 14px;"></i>
+                      </div>
+                      <div>
+                        <div style="font-size: 0.72rem; color: var(--ruby-element); font-weight: 700; text-transform: uppercase;">Cautionary Stance</div>
+                        <div id="dashboard-tactical-avoid" style="color: var(--text-primary); font-size: 0.82rem; margin-top: 2px;">
+                          Avoid reactive disputes during the evening Water clash window (21:00 - 23:00).
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MULTI-SCHOOL QUICK SUMMARY CARDS -->
+            <div class="school-summary-grid">
+              <!-- 1. Western Astrology Card -->
+              <div class="school-quick-card">
+                <div>
+                  <div class="school-quick-header">
+                    <div class="school-badge-tag western">
+                      <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                      <span>Western Ephemeris</span>
+                    </div>
+                    <span style="font-size: 0.72rem; color: var(--gold-light); font-family: var(--font-mono);">☉ Leo / ☽ Scorpio</span>
+                  </div>
+                  <div class="school-metric-highlight">Solar Ingress & Lunar Trine</div>
+                  <p class="school-quick-desc" id="card-western-summary-text">
+                    Sun in Leo conjunct natal midheaven forms an expansive sextile with Jupiter. Intuition and visionary planning are at an energetic peak.
+                  </p>
+                </div>
+                <div>
+                  <span class="school-alert-badge">
+                    <i data-lucide="compass" style="width: 12px; height: 12px; color: var(--cyan-cosmic);"></i>
+                    <span>Ascendant: Scorpio Gnosis</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 2. BaZi / Eastern Card -->
+              <div class="school-quick-card">
+                <div>
+                  <div class="school-quick-header">
+                    <div class="school-badge-tag bazi">
+                      <i data-lucide="flame" style="width: 14px; height: 14px;"></i>
+                      <span>BaZi Four Pillars</span>
+                    </div>
+                    <span style="font-size: 0.72rem; color: var(--elem-wood); font-family: var(--font-mono);">Jia Wood Day Master</span>
+                  </div>
+                  <div class="school-metric-highlight">Clash & Harmony Vector</div>
+                  <p class="school-quick-desc" id="card-bazi-summary-text">
+                    Day Master harmonizes with the Si Fire (巳) transit branch — producing a favorable Eating God (食神) artistic manifestation flow.
+                  </p>
+                </div>
+                <div>
+                  <span class="school-alert-badge" style="border-color: rgba(34, 197, 94, 0.3); color: var(--elem-wood); background: rgba(34, 197, 94, 0.08);">
+                    <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                    <span>No Destructive Clashes Active</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 3. I Ching / Oracle Card -->
+              <div class="school-quick-card">
+                <div>
+                  <div class="school-quick-header">
+                    <div class="school-badge-tag iching">
+                      <i data-lucide="orbit" style="width: 14px; height: 14px;"></i>
+                      <span>I Ching Matrix</span>
+                    </div>
+                    <span style="font-size: 0.72rem; color: var(--cyan-cosmic); font-family: var(--font-mono);">䷀ Hexagram #1</span>
+                  </div>
+                  <div class="school-metric-highlight">The Creative (Qian 乾)</div>
+                  <p class="school-quick-desc" id="card-iching-summary-text">
+                    Pure dynamic momentum. Proceed with unwavering focus, balancing solar assertiveness with grounded humility.
+                  </p>
+                </div>
+                <div>
+                  <span class="school-alert-badge" style="border-color: rgba(0, 229, 255, 0.3); color: var(--cyan-cosmic); background: rgba(0, 229, 255, 0.08);">
+                    <i data-lucide="zap" style="width: 12px; height: 12px;"></i>
+                    <span>Lines 2 & 5 Active</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DAILY RITUAL GUIDANCE WIDGET & HOURLY QI FLOW -->
+            <div class="grid-2-1" style="margin-bottom: 24px;">
+              <!-- Interactive Daily Guidance Card Widget -->
+              <div class="daily-ritual-widget">
+                <div class="card-header" style="margin-bottom: 16px;">
+                  <div class="card-title">
+                    <i data-lucide="sparkles"></i>
+                    <span>Daily Oracle Guidance Ritual</span>
+                  </div>
+                  <select class="select-input" id="guidance-mode-select" style="padding: 4px 10px; font-size: 0.78rem; width: auto;">
+                    <option value="tarot">Hermetic Tarot Arcana</option>
+                    <option value="rune">Elder Futhark Rune</option>
+                  </select>
+                </div>
+
+                <div class="ritual-widget-layout">
+                  <!-- 3D Card Flip Frame -->
+                  <div class="single-guidance-card-frame" id="daily-guidance-card-frame" title="Click to flip and unveil today's guidance">
+                    <div class="guidance-card-flipper" id="daily-guidance-card-flipper">
+                      <!-- Back Face -->
+                      <div class="guidance-card-face guidance-card-back">
+                        <div style="font-size: 0.7rem; color: var(--gold-light); letter-spacing: 0.1em; text-transform: uppercase;">
+                          Aetheria Oracle
+                        </div>
+                      </div>
+                      <!-- Front Face -->
+                      <div class="guidance-card-face guidance-card-front">
+                        <span class="card-reveal-stance" id="guidance-card-stance">Upright (Radiant Flow)</span>
+                        <div class="card-glyph-large" id="guidance-card-glyph">🪄</div>
+                        <div>
+                          <div class="card-reveal-title" id="guidance-card-title">I. The Magician</div>
+                          <span style="font-size: 0.65rem; color: var(--text-muted);">Sacred Archetype</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Side: Synthesis & Draw Action -->
+                  <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                    <div>
+                      <h4 style="font-family: var(--font-serif-display); color: var(--gold-light); font-size: 1.05rem; margin-bottom: 8px;">
+                        Nocturnal & Solar Attunement
+                      </h4>
+                      <div id="guidance-oracle-synthesis" style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; min-height: 110px;">
+                        <span style="color: var(--text-muted); font-style: italic;">
+                          Tap the card or click the button below to draw your daily archetype guidance for this epoch.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                      <button class="btn-primary" id="btn-draw-daily-guidance">
+                        <i data-lucide="sparkles"></i> Draw Daily Guidance Card
+                      </button>
+                      <button class="btn-secondary" id="btn-reset-guidance-card" style="display: none;">
+                        <i data-lucide="rotate-ccw"></i> Cast Again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hourly Qi Clock & Five Elements Mini Balance -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i data-lucide="clock"></i>
+                    <span>Hourly Qi Clock (12 Shi Chen)</span>
+                  </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
+                    <span>Elemental Influx</span>
+                    <span>Dominant: <strong style="color: var(--elem-wood);">Wood (38%)</strong></span>
+                  </div>
+                  <div class="element-balance-bar">
+                    <div class="elem-bar-segment elem-bar-wood" style="width: 38%;" title="Wood: 38%"></div>
+                    <div class="elem-bar-segment elem-bar-fire" style="width: 28%;" title="Fire: 28%"></div>
+                    <div class="elem-bar-segment elem-bar-earth" style="width: 14%;" title="Earth: 14%"></div>
+                    <div class="elem-bar-segment elem-bar-metal" style="width: 10%;" title="Metal: 10%"></div>
+                    <div class="elem-bar-segment elem-bar-water" style="width: 10%;" title="Water: 10%"></div>
+                  </div>
+                </div>
+
+                <div id="hourly-bazi-clock" style="display: flex; flex-direction: column; gap: 6px; max-height: 230px; overflow-y: auto; padding-right: 4px;">
+                  <!-- Dynamic Hourly Pillars generated by JS -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. VIEW: MID & LONG-TERM (Half-Year / Year / Next Year) -->
+          <section class="view-section" id="view-midlong">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Macro Epochs & Destiny Projections</h2>
+                <p>Da Yun (10-Year Luck Pillars), Annual Solar Returns, Saturn Cycles, and Quarter-by-Quarter Transits.</p>
+              </div>
+              <div class="projection-timeline-bar">
+                <button class="sub-tab-btn horizon-btn" data-horizon="6month">6-Month Horizon</button>
+                <button class="sub-tab-btn horizon-btn active" data-horizon="2026">2026 Annual Fate</button>
+                <button class="sub-tab-btn horizon-btn" data-horizon="2027">2027 Projections</button>
+              </div>
+            </div>
+
+            <!-- Grand Da Yun (10-Year Major Luck Cycles) & Planetary Returns -->
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-header">
+                <div class="card-title">
+                  <i data-lucide="milestone"></i>
+                  <span>Grand Da Yun (10-Year Major Luck Cycles & Planetary Returns)</span>
+                </div>
+                <span class="card-subtitle">Select any pillar to inspect 10-year thematic archetypes</span>
+              </div>
+              
+              <div class="dayun-timeline-slider" id="dayun-timeline-slider-container">
+                <!-- Rendered dynamically by projections.js -->
+              </div>
+
+              <div id="dayun-cycle-detail-box" style="margin-top: 14px; padding: 14px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                <!-- Dynamic Da Yun inspection details -->
+              </div>
+            </div>
+
+            <!-- Quarter-by-Quarter Macro Forecast Section -->
+            <div class="card" style="margin-bottom: 24px;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">
+                    <i data-lucide="calendar-range"></i>
+                    <span id="horizon-active-title">2026 Annual Fate (Year of the Bing Wu / Fire Horse)</span>
+                  </div>
+                  <div class="card-subtitle" id="horizon-active-desc">Solar Luminescence, Decisive Action & Creative Breakthrough</div>
+                </div>
+              </div>
+
+              <!-- 4-Quarter Responsive Cards Grid -->
+              <div class="quarter-forecast-grid" id="quarter-forecast-container">
+                <!-- Rendered dynamically by projections.js -->
+              </div>
+            </div>
+
+            <!-- Additional Solar Return & Liu Nian Clash Dynamics -->
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i data-lucide="sun"></i>
+                    <span>Annual Solar Return & Planetary Progressions</span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem; color: var(--text-secondary);">
+                  <div style="padding: 12px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <strong style="color: var(--gold-light);">Solar Return Ascendant:</strong> Scorpio 14° — Year of profound transformation, psychological unmasking, and financial restructuring.
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <strong style="color: var(--gold-light);">Jupiter Ingress:</strong> 10th House transit — Significant career expansions and public recognition peaking in Q2/Q3.
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <strong style="color: var(--gold-light);">Saturn Taskmaster:</strong> Transiting natal 6th House — Demands restructuring of daily physical health and craft mastery.
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i data-lucide="shield-alert"></i>
+                    <span>Annual Clashes & Harmonious Combinations (Liu Nian)</span>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="padding: 12px; background: var(--bg-surface); border-radius: var(--radius-md); border-left: 3px solid var(--elem-wood);">
+                    <h5 style="color: var(--gold-light); font-weight: 700;">Three Harmonies (San He) Attraction:</h5>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Wu Fire (午) in annual branch harmonizes with Yin Tiger (寅) and Xu Dog (戌) in natal chart, generating potent Fire element support for public influence and creative manifest.</p>
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-surface); border-radius: var(--radius-md); border-left: 3px solid var(--ruby-element);">
+                    <h5 style="color: #fca5a5; font-weight: 700;">Potential Conflict Vector (Zi-Wu Chong):</h5>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Water branch in hour pillar experiences a minor 6-clash (Chong) with annual Horse. Guard emotional equilibrium and avoid speculative investments in the 11th lunar month.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. VIEW: FOUNDATION & LIFE ANALYSIS (Natal Chart, BaZi Four Pillars, Zi Wei Grid, Life Master) -->
+          <section class="view-section" id="view-foundation">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Tri-School Foundational & Life Analysis Matrix</h2>
+                <p>Interactive BaZi Four Pillars, Zi Wei Dou Shu 12-Palaces, Element Balance Gauges, and Life Master Synthesis.</p>
+              </div>
+              <div class="sub-tabs-bar" id="foundation-subtabs">
+                <button class="sub-tab-btn active" data-school-tab="bazi">BaZi Four Pillars & Elements</button>
+                <button class="sub-tab-btn" data-school-tab="ziwei">Zi Wei Dou Shu 12 Palaces</button>
+                <button class="sub-tab-btn" data-school-tab="lifemaster">Life Master Synthesis</button>
+                <button class="sub-tab-btn" data-school-tab="astrology">Western Natal Wheel</button>
+              </div>
+            </div>
+
+            <!-- Subview 1: BaZi Four Pillars & Element Balance -->
+            <div id="subview-bazi" class="school-subview">
+              <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">
+                      <i data-lucide="columns-4"></i>
+                      <span>BaZi Four Pillars of Destiny (八字命盘)</span>
+                    </div>
+                    <span class="card-subtitle" id="bazi-calc-profile-name">Seeker: Astraea Vane</span>
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    Click any pillar to inspect deep stem-branch interactions
+                  </div>
+                </div>
+                
+                <!-- Interactive 4-Pillars Table -->
+                <div class="bazi-pillars-table" id="bazi-pillars-render">
+                  <!-- Filled dynamically by foundation.js -->
+                </div>
+
+                <!-- Pillar Deep Inspector -->
+                <div id="bazi-pillar-inspector" style="margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                  <!-- Dynamic commentary rendered by foundation.js -->
+                </div>
+              </div>
+
+              <!-- Element Balance Meter Card -->
+              <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i data-lucide="scale"></i>
+                    <span>Five Elements Balance & Yong Shen Diagnostics (五行生克与用神)</span>
+                  </div>
+                  <span class="card-subtitle">Wood (木), Fire (火), Earth (土), Metal (金), Water (水) Breakdown</span>
+                </div>
+
+                <div id="bazi-element-breakdown-container">
+                  <!-- Rendered dynamically by foundation.js -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Subview 2: Zi Wei Dou Shu 12-Palace Matrix -->
+            <div id="subview-ziwei" class="school-subview" style="display: none;">
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title"><i data-lucide="grid"></i> <span>Zi Wei Dou Shu 12-Palace Matrix (紫微斗数命盘)</span></div>
+                    <span class="card-subtitle">Hover or click any palace cell to inspect major stars, brightness, and karmic guidance in the center hub</span>
+                  </div>
+                </div>
+                
+                <div class="ziwei-grid" id="ziwei-palaces-grid">
+                  <!-- 12 palace cells + 1 center hub rendered by foundation.js -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Subview 3: Life Master Summary Panel -->
+            <div id="subview-lifemaster" class="school-subview" style="display: none;">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">
+                    <i data-lucide="sparkles"></i>
+                    <span>Life Master Synthesis & Sovereign Archetypes</span>
+                  </div>
+                  <span class="card-subtitle">Holistic Life Direction across Temperament, Career, Relationships, and Health</span>
+                </div>
+
+                <div id="life-master-summary-panel">
+                  <!-- Rendered dynamically by foundation.js with tabbed interface -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Subview 4: Western Astrology Natal Wheel -->
+            <div id="subview-astrology" class="school-subview" style="display: none;">
+              <div class="grid-2">
+                <div class="card">
+                  <div class="card-header">
+                    <div class="card-title"><i data-lucide="circle-dot"></i> <span>Natal Wheel Visualizer</span></div>
+                  </div>
+                  <div id="natal-wheel-canvas-container" style="display: flex; justify-content: center; align-items: center; min-height: 320px;">
+                    <svg id="natal-wheel-svg" width="300" height="300" viewBox="0 0 300 300">
+                      <!-- SVG Circles & Planetary Aspect glyphs rendered by app.js -->
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="card-header">
+                    <div class="card-title"><i data-lucide="list"></i> <span>Key Planetary Placements</span></div>
+                  </div>
+                  <div id="natal-placements-table" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Filled dynamically by app.js -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4. VIEW: INTERACTIVE RITUALS (Tarot, Runes, I Ching) -->
+          <section class="view-section" id="view-rituals">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Esoteric Ritual Chambers</h2>
+                <p>Cast interactive spreads with 78 Tarot archetypes, 24 Elder Futhark runes, or ancient 3-coin I Ching.</p>
+              </div>
+              <div class="sub-tabs-bar" id="rituals-subtabs">
+                <button class="sub-tab-btn active" data-ritual="tarot">Tarot Spreads</button>
+                <button class="sub-tab-btn" data-ritual="runes">Rune Stones</button>
+                <button class="sub-tab-btn" data-ritual="iching">I Ching Coins</button>
+              </div>
+            </div>
+
+            <!-- Ritual 1: Tarot -->
+            <div id="subview-ritual-tarot" class="ritual-subview">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="layers"></i> <span>Tarot Chamber</span></div>
+                  <div style="display: flex; gap: 10px;">
+                    <select class="select-input" id="tarot-spread-type" style="width: 170px; padding: 6px 10px;">
+                      <option value="three-card">3-Card: Past / Present / Future</option>
+                      <option value="single">Single Card Oracle</option>
+                      <option value="decision">2-Card: Crossroads Choice</option>
+                    </select>
+                    <button class="btn-primary" id="btn-shuffle-draw-tarot"><i data-lucide="shuffle"></i> Shuffle & Draw</button>
+                  </div>
+                </div>
+
+                <div class="tarot-arena">
+                  <div class="tarot-spread-slots" id="tarot-slots-container">
+                    <!-- Cards will be populated here -->
+                  </div>
+                  <div id="tarot-reading-interpretation" style="width: 100%; background: var(--bg-surface); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--gold-border); display: none;">
+                    <h4 style="font-family: var(--font-serif-display); color: var(--gold-light); font-size: 1rem; margin-bottom: 8px;">Oracle Synthesis</h4>
+                    <p id="tarot-interp-text" style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ritual 2: Runes -->
+            <div id="subview-ritual-runes" class="ritual-subview" style="display: none;">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="gem"></i> <span>Elder Futhark Rune Casting</span></div>
+                  <button class="btn-primary" id="btn-cast-runes"><i data-lucide="sparkles"></i> Cast Onto Sacred Cloth</button>
+                </div>
+
+                <div class="runes-cloth" id="runes-cloth-arena">
+                  <div class="rune-stones-wrapper" id="rune-stones-container">
+                    <p style="color: var(--text-muted); font-style: italic;">Tap "Cast Onto Sacred Cloth" to draw from the pouch...</p>
+                  </div>
+                </div>
+
+                <div id="rune-reading-box" style="margin-top: 20px; background: var(--bg-surface); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--gold-border); display: none;">
+                  <h4 style="font-family: var(--font-serif-display); color: var(--cyan-cosmic); font-size: 1rem; margin-bottom: 8px;">Wyrd Oracle Message</h4>
+                  <div id="rune-interp-text" style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ritual 3: I Ching -->
+            <div id="subview-ritual-iching" class="ritual-subview" style="display: none;">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="coins"></i> <span>I Ching: Book of Changes (周易)</span></div>
+                  <button class="btn-primary" id="btn-toss-iching"><i data-lucide="rotate-cw"></i> Toss 3 Bronze Coins</button>
+                </div>
+
+                <div class="iching-arena">
+                  <div class="iching-coins-row" id="iching-coins-row">
+                    <div class="iching-coin" id="coin-1"></div>
+                    <div class="iching-coin" id="coin-2"></div>
+                    <div class="iching-coin" id="coin-3"></div>
+                  </div>
+
+                  <div style="font-size: 0.85rem; color: var(--gold-light);" id="iching-step-prompt">
+                    Toss 1 of 6: Building baseline line (Initial Line)...
+                  </div>
+
+                  <div class="iching-hexagram-lines" id="iching-lines-stack">
+                    <!-- Lines added bottom to top -->
+                  </div>
+
+                  <div id="iching-judgement-box" style="width: 100%; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--gold-border); display: none;">
+                    <h3 id="iching-hex-title" style="font-family: var(--font-serif-display); color: var(--gold-light); font-size: 1.15rem; margin-bottom: 8px;"></h3>
+                    <div id="iching-hex-content" style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. VIEW: ONEIROMANCY (Dream Journal & Interpreter) -->
+          <section class="view-section" id="view-oneiromancy">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Oneiromancy & Astral Scrying</h2>
+                <p>Log nocturnal visions, analyze archetypes, and decode shadow messages with AI High-Thinking.</p>
+              </div>
+            </div>
+
+            <div class="grid-1-2">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="pen-tool"></i> <span>Record Dream</span></div>
+                </div>
+
+                <form id="dream-form">
+                  <div class="input-group">
+                    <label class="input-label" for="dream-title">Dream Title</label>
+                    <input type="text" class="text-input" id="dream-title" placeholder="e.g. Golden Obsidian Citadel..." required />
+                  </div>
+
+                  <div class="grid-2" style="gap: 12px;">
+                    <div class="input-group">
+                      <label class="input-label" for="dream-date">Dream Date</label>
+                      <input type="date" class="text-input" id="dream-date" value="2026-08-17" required />
+                    </div>
+
+                    <div class="input-group">
+                      <label class="input-label" for="dream-emotion">Emotional Tone</label>
+                      <select class="select-input" id="dream-emotion">
+                        <option value="Mysterious & Numinous">Mysterious & Numinous</option>
+                        <option value="Euphoric / Lucid">Euphoric / Lucid</option>
+                        <option value="Anxious / Pursued">Anxious / Pursued</option>
+                        <option value="Prophetic / Ominous">Prophetic / Ominous</option>
+                        <option value="Alchemical / Transformative">Alchemical / Transformative</option>
+                        <option value="Serene & Oceanic">Serene & Oceanic</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <label class="input-label" for="dream-lucidity">Lucidity & Clarity Rating (1-5)</label>
+                      <span id="dream-lucidity-val" style="font-size: 0.8rem; color: var(--gold-light);">Level 3: Aware of dream state</span>
+                    </div>
+                    <input type="range" min="1" max="5" value="3" id="dream-lucidity" style="accent-color: var(--gold-primary); width: 100%;" />
+                  </div>
+
+                  <div class="input-group">
+                    <label class="input-label" for="dream-tags">Key Symbols & Tags (Comma-separated)</label>
+                    <input type="text" class="text-input" id="dream-tags" placeholder="Snake, Obsidian Tower, Water, Mirror" />
+                  </div>
+
+                  <div class="input-group">
+                    <label class="input-label" for="dream-content">Dream Narrative</label>
+                    <textarea class="textarea-input" id="dream-content" rows="5" placeholder="Describe the scenery, figures, colors, emotional atmosphere, and unfolding events in detail..." required></textarea>
+                  </div>
+
+                  <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;" id="btn-save-dream">
+                    <i data-lucide="save"></i> Record & Scry Dream
+                  </button>
+                </form>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="book"></i> <span>Dream Chronicle & Alchemical Readings</span></div>
+                </div>
+
+                <!-- Search & Tag Filter Bar -->
+                <div style="margin-bottom: 14px;">
+                  <div class="input-group" style="margin-bottom: 10px;">
+                    <input type="text" class="text-input" id="dream-search-input" placeholder="🔍 Search dreams by title, narrative, or symbols..." />
+                  </div>
+                  <div class="dream-filter-chips" id="dream-tag-filter-chips">
+                    <button class="dream-filter-chip active" data-tag="all">All Dreams</button>
+                    <button class="dream-filter-chip" data-tag="lucid">Lucid (★4+)</button>
+                    <button class="dream-filter-chip" data-tag="alchemical">Alchemical</button>
+                    <button class="dream-filter-chip" data-tag="prophetic">Prophetic</button>
+                    <button class="dream-filter-chip" data-tag="shadow">Shadow</button>
+                  </div>
+                </div>
+
+                <div id="dream-interpretation-result" style="display: none; margin-bottom: 20px; background: var(--bg-surface); padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--gold-border-bright);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="font-family: var(--font-serif-display); color: var(--gold-light); font-size: 1.05rem;" id="interp-heading">Alchemical Interpretation</h4>
+                    <span class="badge-pill" id="interp-model-tag">Gemini 3.1 Pro High Thinking</span>
+                  </div>
+                  <div id="interp-content-body" style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.7; white-space: pre-wrap;"></div>
+                </div>
+
+                <div class="dream-list-scroll" id="dream-journal-list">
+                  <!-- Past dreams loaded from localStorage -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 6. VIEW: AI CONSULTATION HUB (Multi-Agent Chat with High Thinking) -->
+          <section class="view-section" id="view-ai-consult">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>AI Consultation Hub</h2>
+                <p>Engage specialized esoteric master agents powered by <strong>Gemini 3.1 Pro High Thinking</strong>.</p>
+              </div>
+              <div class="view-actions-group">
+                <button class="btn-secondary" id="btn-toggle-context-drawer"><i data-lucide="code"></i> Inspect Live Context Payload</button>
+                <button class="btn-secondary" id="btn-export-chat"><i data-lucide="download"></i> Export Transcript</button>
+                <button class="btn-secondary" id="btn-clear-chat"><i data-lucide="trash-2"></i> Clear Chamber</button>
+              </div>
+            </div>
+
+            <!-- Advanced Context Inspector Collapsible Drawer -->
+            <div class="context-inspector-drawer" id="context-inspector-drawer" style="display: none;">
+              <div class="drawer-header">
+                <div class="drawer-title-group">
+                  <i data-lucide="database" style="color: var(--cyan-cosmic);"></i>
+                  <span style="font-weight: 700; color: var(--gold-light); font-size: 0.92rem;">Active Context JSON Payload (Live Synchronized)</span>
+                  <span class="badge-pill badge-cyan" id="context-schools-count-badge">5 Schools Active</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button class="btn-secondary" id="btn-copy-context-payload" style="padding: 5px 12px; font-size: 0.78rem;">
+                    <i data-lucide="copy"></i> Copy JSON Payload
+                  </button>
+                </div>
+              </div>
+              <div class="drawer-body">
+                <pre class="json-code-container"><code id="context-payload-code">{/* Loaded dynamically by chat.js */}</code></pre>
+              </div>
+            </div>
+
+            <!-- Chat Control Panel Header Bar -->
+            <div class="chat-control-panel-bar">
+              <!-- Active Oracle Focus Checkboxes -->
+              <div class="control-panel-section">
+                <span class="control-panel-label"><i data-lucide="layers"></i> Active Oracle Focus:</span>
+                <div class="school-toggle-chips">
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="bazi" checked />
+                    <span class="school-chip-btn">☯ BaZi</span>
+                  </label>
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="astrology" checked />
+                    <span class="school-chip-btn">✨ Astrology</span>
+                  </label>
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="tarot" checked />
+                    <span class="school-chip-btn">🃏 Tarot</span>
+                  </label>
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="dream" checked />
+                    <span class="school-chip-btn">🌙 Dream</span>
+                  </label>
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="iching" checked />
+                    <span class="school-chip-btn">📜 I Ching</span>
+                  </label>
+                  <label class="school-chip-label">
+                    <input type="checkbox" class="school-focus-toggle" value="ziwei" />
+                    <span class="school-chip-btn">⭐ Zi Wei</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Tone & Perspective Selector -->
+              <div class="control-panel-section tone-section">
+                <span class="control-panel-label"><i data-lucide="feather"></i> Tone & Perspective:</span>
+                <select class="select-input tone-dropdown" id="chat-tone-select">
+                  <option value="mystical" selected>✦ Mystical & Poetic (Hermetic Allegory)</option>
+                  <option value="pragmatic">⚡ Direct & Pragmatic (Actionable Strategy)</option>
+                  <option value="psychological">🏛️ Psychological & Archetypal (Jungian Depth)</option>
+                  <option value="analytical">📐 Historical & Analytical (Ephemeris & Texts)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ai-consult-container">
+              <!-- Left Agent Selection -->
+              <div class="agent-selector-card">
+                <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--gold-primary); font-weight: 700; letter-spacing: 0.08em; margin-bottom: 4px;">Divination Specialists</span>
+
+                <button class="agent-btn active" data-agent="synthesizer">
+                  <div class="agent-avatar" style="border-color: var(--gold-primary);">🔮</div>
+                  <div>
+                    <div class="agent-name">Grand Synthesizer</div>
+                    <div class="agent-role">Multi-School Unified Oracle</div>
+                  </div>
+                </button>
+
+                <button class="agent-btn" data-agent="astrologer">
+                  <div class="agent-avatar" style="border-color: var(--cyan-cosmic);">✨</div>
+                  <div>
+                    <div class="agent-name">Hermetic Astrologer</div>
+                    <div class="agent-role">Planetary & Hellenistic Ephemeris</div>
+                  </div>
+                </button>
+
+                <button class="agent-btn" data-agent="bazi-master">
+                  <div class="agent-avatar" style="border-color: var(--emerald-element);">☯</div>
+                  <div>
+                    <div class="agent-name">Daoist BaZi Master</div>
+                    <div class="agent-role">Four Pillars & 5 Elements Qi</div>
+                  </div>
+                </button>
+
+                <button class="agent-btn" data-agent="tarot-seer">
+                  <div class="agent-avatar" style="border-color: var(--violet-celestial);">🃏</div>
+                  <div>
+                    <div class="agent-name">Kabbalistic Tarot Seer</div>
+                    <div class="agent-role">Tree of Life & 78 Arcana Paths</div>
+                  </div>
+                </button>
+
+                <button class="agent-btn" data-agent="jungian-sage">
+                  <div class="agent-avatar" style="border-color: var(--sapphire-element);">🏛️</div>
+                  <div>
+                    <div class="agent-name">Jungian Archetypist</div>
+                    <div class="agent-role">Shadow Integration & Active Imagination</div>
+                  </div>
+                </button>
+
+                <button class="agent-btn" data-agent="iching-sage">
+                  <div class="agent-avatar" style="border-color: var(--gold-light);">📜</div>
+                  <div>
+                    <div class="agent-name">I Ching Master</div>
+                    <div class="agent-role">64 Hexagrams & Cosmic Timing</div>
+                  </div>
+                </button>
+
+                <div style="margin-top: auto; padding: 12px; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: var(--radius-md);">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--cyan-cosmic); font-weight: 600;">
+                    <i data-lucide="brain-circuit" style="width: 16px; height: 16px;"></i>
+                    <span>High Thinking Active</span>
+                  </div>
+                  <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Deep multi-step reasoning across astrological ephemeris, stem-branch dynamics, and archetypal matrices.</p>
+                </div>
+              </div>
+
+              <!-- Right Chat Chamber -->
+              <div class="chat-chamber">
+                <!-- Quick Prompt Chips -->
+                <div class="chat-quick-chips-wrapper">
+                  <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px;">
+                    <i data-lucide="sparkles" style="width: 12px; height: 12px; color: var(--gold-primary);"></i> Quick Inquiries:
+                  </span>
+                  <div class="chat-quick-chips-list">
+                    <button class="chat-quick-chip" data-prompt="What does my career look like this year? Analyze through my 10th House transits and BaZi Day Master.">
+                      💼 Career Outlook This Year
+                    </button>
+                    <button class="chat-quick-chip" data-prompt="How can I improve my relationship energy and dissolve emotional blocks?">
+                      ❤️ Relationship Harmonic Energy
+                    </button>
+                    <button class="chat-quick-chip" data-prompt="Interpret my recent financial block and provide elemental remedies to unlock abundance.">
+                      💰 Financial Block & Remedies
+                    </button>
+                    <button class="chat-quick-chip" data-prompt="What is my favorable element (Yong Shen 用神) and how should I activate it in daily life?">
+                      🌱 Yong Shen (Favorable Element)
+                    </button>
+                    <button class="chat-quick-chip" data-prompt="Synthesize my latest dream vision with my current planetary transits.">
+                      🌙 Synthesize Dream with Transits
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Chat Messages Scroll -->
+                <div class="chat-history" id="ai-chat-history">
+                  <!-- Rendered dynamically by chat.js -->
+                </div>
+
+                <!-- Chat Input Bar -->
+                <div class="chat-input-bar">
+                  <div class="chat-input-wrapper">
+                    <input type="text" class="text-input" id="chat-user-input" placeholder="Inquire into your fate, upcoming transits, or elemental remedies..." />
+                  </div>
+                  <button class="btn-primary" id="btn-send-chat" style="padding: 11px 22px;">
+                    <span>Consult</span>
+                    <i data-lucide="send"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 7. VIEW: CUSTOM SCHOOL MANAGER (Define proprietary systems) -->
+          <section class="view-section" id="view-custom-schools">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Custom School Manager</h2>
+                <p>Define proprietary divination rules, custom aspect weighting, geomantic figures, and symbolic engines.</p>
+              </div>
+              <div class="view-actions-group">
+                <button class="btn-primary" id="btn-open-create-school"><i data-lucide="plus"></i> Define New System</button>
+              </div>
+            </div>
+
+            <div class="grid-3" id="custom-schools-grid">
+              <!-- Custom schools rendered by app.js -->
+            </div>
+          </section>
+
+          <!-- 8. VIEW: SETTINGS & PROFILE (User birth data, True Solar Time toggle, API Keys) -->
+          <section class="view-section" id="view-settings">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Seeker Profile & Astrological Settings</h2>
+                <p>Configure precise natal coordinates, Equation of Time adjustments, and divination parameters.</p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="user-check"></i> <span>Natal Birth Data</span></div>
+                </div>
+
+                <form id="settings-profile-form">
+                  <div class="input-group">
+                    <label class="input-label" for="setting-name">Seeker Name / Moniker</label>
+                    <input type="text" class="text-input" id="setting-name" value="Astraea Vane" required />
+                  </div>
+
+                  <div class="grid-2">
+                    <div class="input-group">
+                      <label class="input-label" for="setting-birthdate">Date of Birth</label>
+                      <input type="date" class="text-input" id="setting-birthdate" value="1998-08-16" required />
+                    </div>
+
+                    <div class="input-group">
+                      <label class="input-label" for="setting-birthtime">Exact Birth Time</label>
+                      <input type="time" class="text-input" id="setting-birthtime" value="11:45" step="1" required />
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label class="input-label" for="setting-city">Birth City & Region</label>
+                    <input type="text" class="text-input" id="setting-city" value="Kyoto, Japan" required />
+                  </div>
+
+                  <div class="grid-2">
+                    <div class="input-group">
+                      <label class="input-label" for="setting-lat">Latitude (° N/S)</label>
+                      <input type="number" step="0.0001" class="text-input" id="setting-lat" value="35.0116" required />
+                    </div>
+
+                    <div class="input-group">
+                      <label class="input-label" for="setting-lon">Longitude (° E/W)</label>
+                      <input type="number" step="0.0001" class="text-input" id="setting-lon" value="135.7681" required />
+                    </div>
+                  </div>
+
+                  <div class="input-group">
+                    <label class="input-label" for="setting-gender">Yin-Yang Polarity / Gender Reference</label>
+                    <select class="select-input" id="setting-gender">
+                      <option value="Female / Yin">Female / Yin (Affects BaZi Da Yun Progression)</option>
+                      <option value="Male / Yang">Male / Yang</option>
+                      <option value="Non-Binary / Balanced">Non-Binary / Balanced Equinox</option>
+                    </select>
+                  </div>
+
+                  <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                    <i data-lucide="save"></i> Save & Recalculate All Systems
+                  </button>
+                </form>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="sun-medium"></i> <span>Astronomical & Solar Engine</span></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <div>
+                      <div style="font-weight: 600; color: var(--text-pure); font-size: 0.92rem;">True Solar Time Adjustment (真太阳时)</div>
+                      <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Corrects standard clock time for Equation of Time and local geographic longitude.</div>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                      <input type="checkbox" id="setting-tst-toggle" checked style="opacity: 0; width: 0; height: 0;">
+                      <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gold-primary); border-radius: 34px; transition: .3s;"></span>
+                    </label>
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <div>
+                      <div style="font-weight: 600; color: var(--text-pure); font-size: 0.92rem;">Ambient Chimes & Sound Synthesis</div>
+                      <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Play harmonic singing bowl resonance on ritual casting and card draws.</div>
+                    </div>
+                    <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                      <input type="checkbox" id="setting-sound-toggle" checked style="opacity: 0; width: 0; height: 0;">
+                      <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gold-primary); border-radius: 34px; transition: .3s;"></span>
+                    </label>
+                  </div>
+
+                  <div style="padding: 16px; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                    <h5 style="color: var(--gold-light); font-size: 0.88rem; font-weight: 700; margin-bottom: 6px;">Active Calculation Telemetry</h5>
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-secondary);">
+                      <div>Longitude Offset: <span id="telemetry-lon-offset" style="color: var(--cyan-cosmic);">+23m 04s</span></div>
+                      <div>Equation of Time (EoT): <span id="telemetry-eot" style="color: var(--gold-light);">-03m 42s</span></div>
+                      <div>Net TST Delta: <span id="telemetry-net-delta" style="color: var(--emerald-element);">+19m 22s</span></div>
+                    </div>
+                  </div>
+
+                  <button class="btn-secondary" id="btn-reset-demo-data" style="align-self: flex-start;">
+                    <i data-lucide="rotate-ccw"></i> Reset to Celestial Baseline Demo
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- API Configuration & Data Portability Row -->
+            <div class="grid-2" style="margin-top: 24px;">
+              <!-- API Service Dispatcher Settings -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="server"></i> <span>API Integration & Model Dispatcher</span></div>
+                </div>
+                <form id="settings-api-form">
+                  <div class="input-group">
+                    <label class="input-label" for="setting-api-provider">Active Inference Backend</label>
+                    <select class="select-input" id="setting-api-provider">
+                      <option value="gemini" selected>Option B: Google Gemini 3.1 Pro (High Thinking Server Proxy)</option>
+                      <option value="webhook">Option A: Dify / n8n Webhook Endpoint</option>
+                    </select>
+                  </div>
+
+                  <div id="webhook-config-fields" style="display: none;">
+                    <div class="input-group">
+                      <label class="input-label" for="setting-webhook-url">Dify / n8n Webhook URL</label>
+                      <input type="url" class="text-input" id="setting-webhook-url" placeholder="https://dify.your-domain.com/v1/workflows/run" />
+                      <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; display: block;">POST JSON endpoint receiving the structured Master Synthesizer payload.</span>
+                    </div>
+
+                    <div class="input-group">
+                      <label class="input-label" for="setting-webhook-token">Bearer Authentication Token (Optional)</label>
+                      <input type="password" class="text-input" id="setting-webhook-token" placeholder="app-xxxxxxxxx" />
+                    </div>
+                  </div>
+
+                  <div style="padding: 12px; background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: var(--radius-md); margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--cyan-cosmic); font-weight: 700;">
+                      <i data-lucide="shield-check" style="width: 15px; height: 15px;"></i>
+                      <span>Master Synthesizer Directives Active</span>
+                    </div>
+                    <p style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
+                      Every inquiry automatically builds a grounding prompt incorporating natal JSON, transit coordinates, active school rules, and custom user-defined systems.
+                    </p>
+                  </div>
+
+                  <button type="submit" class="btn-primary">
+                    <i data-lucide="save"></i> Save API Configuration
+                  </button>
+                </form>
+              </div>
+
+              <!-- Data Portability: Export / Import -->
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="hard-drive"></i> <span>Data Portability & Vault Backup</span></div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                  <div>
+                    <div style="font-weight: 600; color: var(--gold-light); font-size: 0.92rem;">Export Full Divination Vault (JSON)</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                      Downloads all natal profiles, dream journal entries, custom divination schools, and settings to a portable JSON backup.
+                    </p>
+                    <button class="btn-secondary" id="btn-export-vault-json" style="margin-top: 8px;">
+                      <i data-lucide="download"></i> Download Aetheria Vault (.json)
+                    </button>
+                  </div>
+
+                  <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 16px;">
+                    <div style="font-weight: 600; color: var(--gold-light); font-size: 0.92rem;">Restore / Import Vault Archive</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                      Upload an existing <code>.json</code> backup to restore your custom divination systems, dream logs, and settings.
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                      <input type="file" id="file-import-vault-json" accept=".json" style="display: none;" />
+                      <button class="btn-secondary" id="btn-trigger-import-vault">
+                        <i data-lucide="upload"></i> Select Backup JSON File
+                      </button>
+                      <span id="import-file-status" style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono);"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+
+      <!-- PROFILE DATA MODAL DIALOG -->
+      <div class="modal-backdrop" id="profile-modal-backdrop" aria-hidden="true">
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-profile-title">
+          <div class="modal-header">
+            <div class="modal-title-group">
+              <div class="modal-title-icon">
+                <i data-lucide="compass"></i>
+              </div>
+              <div>
+                <h3 class="modal-title" id="modal-profile-title">Natal Birth Profile & Solar Geometries</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Synchronizes True Solar Time (TST), BaZi Four Pillars, and Western Ephemeris.</p>
+              </div>
+            </div>
+            <button class="modal-close-btn" id="modal-profile-close" aria-label="Close modal">
+              <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+          </div>
+
+          <form id="modal-profile-form">
+            <div class="modal-body">
+              <!-- Quick City Preset Lookup -->
+              <div class="city-preset-box">
+                <div class="city-preset-header">
+                  <span><i data-lucide="map-pin" style="width: 13px; height: 13px; display: inline-block; vertical-align: middle;"></i> Quick Astronomical City Preset Lookup</span>
+                  <span style="font-size: 0.72rem; color: var(--text-muted);">Auto-fills coordinates & timezone</span>
+                </div>
+                <select class="select-input" id="modal-city-preset" style="padding: 7px 12px; font-size: 0.85rem; border-color: rgba(0, 229, 255, 0.3);">
+                  <option value="">-- Choose or select a global city preset --</option>
+                  <option value="Kyoto, Japan" data-lat="35.0116" data-lon="135.7681" data-tz="9">Kyoto, Japan (135.77°E, UTC+9)</option>
+                  <option value="Tokyo, Japan" data-lat="35.6762" data-lon="139.6503" data-tz="9">Tokyo, Japan (139.65°E, UTC+9)</option>
+                  <option value="Beijing, China" data-lat="39.9042" data-lon="116.4074" data-tz="8">Beijing, China (116.41°E, UTC+8)</option>
+                  <option value="Shanghai, China" data-lat="31.2304" data-lon="121.4737" data-tz="8">Shanghai, China (121.47°E, UTC+8)</option>
+                  <option value="Hong Kong" data-lat="22.3193" data-lon="114.1694" data-tz="8">Hong Kong (114.17°E, UTC+8)</option>
+                  <option value="Taipei, Taiwan" data-lat="25.0330" data-lon="121.5654" data-tz="8">Taipei, Taiwan (121.57°E, UTC+8)</option>
+                  <option value="Seoul, South Korea" data-lat="37.5665" data-lon="126.9780" data-tz="9">Seoul, South Korea (126.98°E, UTC+9)</option>
+                  <option value="Singapore" data-lat="1.3521" data-lon="103.8198" data-tz="8">Singapore (103.82°E, UTC+8)</option>
+                  <option value="Bangkok, Thailand" data-lat="13.7563" data-lon="100.5018" data-tz="7">Bangkok, Thailand (100.50°E, UTC+7)</option>
+                  <option value="London, United Kingdom" data-lat="51.5074" data-lon="-0.1278" data-tz="0">London, United Kingdom (0.13°W, UTC+0)</option>
+                  <option value="Paris, France" data-lat="48.8566" data-lon="2.3522" data-tz="1">Paris, France (2.35°E, UTC+1)</option>
+                  <option value="Rome, Italy" data-lat="41.9028" data-lon="12.4964" data-tz="1">Rome, Italy (12.50°E, UTC+1)</option>
+                  <option value="Athens, Greece" data-lat="37.9838" data-lon="23.7275" data-tz="2">Athens, Greece (23.73°E, UTC+2)</option>
+                  <option value="Cairo, Egypt" data-lat="30.0444" data-lon="31.2357" data-tz="2">Cairo, Egypt (31.24°E, UTC+2)</option>
+                  <option value="New York, USA" data-lat="40.7128" data-lon="-74.0060" data-tz="-5">New York, USA (74.01°W, UTC-5)</option>
+                  <option value="Los Angeles, USA" data-lat="34.0522" data-lon="-118.2437" data-tz="-8">Los Angeles, USA (118.24°W, UTC-8)</option>
+                  <option value="San Francisco, USA" data-lat="37.7749" data-lon="-122.4194" data-tz="-8">San Francisco, USA (122.42°W, UTC-8)</option>
+                  <option value="Sydney, Australia" data-lat="-33.8688" data-lon="151.2093" data-tz="10">Sydney, Australia (151.21°E, UTC+10)</option>
+                </select>
+              </div>
+
+              <!-- Full Name & Gender -->
+              <div class="grid-2">
+                <div class="input-group">
+                  <label class="input-label" for="modal-name">Full Name / Seeker Moniker</label>
+                  <input type="text" class="text-input" id="modal-name" placeholder="e.g. Astraea Vane" required />
+                </div>
+
+                <div class="input-group">
+                  <label class="input-label" for="modal-gender">Gender / Yin-Yang Polarity</label>
+                  <select class="select-input" id="modal-gender">
+                    <option value="Female / Yin">Female / Yin (Da Yun Forward/Reverse)</option>
+                    <option value="Male / Yang">Male / Yang</option>
+                    <option value="Non-Binary / Balanced">Non-Binary / Equinox Harmony</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Birth Date & Exact Birth Time -->
+              <div class="grid-2">
+                <div class="input-group">
+                  <label class="input-label" for="modal-birthdate">Date of Birth</label>
+                  <input type="date" class="text-input" id="modal-birthdate" required />
+                </div>
+
+                <div class="input-group">
+                  <label class="input-label" for="modal-birthtime">Exact Birth Time (HH:MM)</label>
+                  <input type="time" class="text-input" id="modal-birthtime" step="1" required />
+                </div>
+              </div>
+
+              <!-- Country / City Name & Timezone Offset -->
+              <div class="grid-2">
+                <div class="input-group">
+                  <label class="input-label" for="modal-city">Birth Country & City</label>
+                  <input type="text" class="text-input" id="modal-city" placeholder="e.g. Kyoto, Japan" required />
+                </div>
+
+                <div class="input-group">
+                  <label class="input-label" for="modal-tz-offset">Time Zone Offset (UTC)</label>
+                  <select class="select-input" id="modal-tz-offset">
+                    <option value="-12">UTC -12:00 (Baker Island)</option>
+                    <option value="-11">UTC -11:00 (Samoa)</option>
+                    <option value="-10">UTC -10:00 (Hawaii)</option>
+                    <option value="-9">UTC -09:00 (Alaska)</option>
+                    <option value="-8">UTC -08:00 (Pacific Time: LA, SF, Vancouver)</option>
+                    <option value="-7">UTC -07:00 (Mountain Time: Denver, Phoenix)</option>
+                    <option value="-6">UTC -06:00 (Central Time: Chicago, Mexico City)</option>
+                    <option value="-5">UTC -05:00 (Eastern Time: NYC, Toronto, Lima)</option>
+                    <option value="-4">UTC -04:00 (Atlantic Time: Santiago, Halifax)</option>
+                    <option value="-3">UTC -03:00 (Buenos Aires, Sao Paulo)</option>
+                    <option value="-2">UTC -02:00 (Mid-Atlantic)</option>
+                    <option value="-1">UTC -01:00 (Azores, Cape Verde)</option>
+                    <option value="0">UTC +00:00 (GMT: London, Dublin, Lisbon, Accra)</option>
+                    <option value="1">UTC +01:00 (CET: Paris, Berlin, Rome, Madrid)</option>
+                    <option value="2">UTC +02:00 (EET: Athens, Cairo, Jerusalem, Helsinki)</option>
+                    <option value="3">UTC +03:00 (Moscow, Istanbul, Riyadh, Nairobi)</option>
+                    <option value="3.5">UTC +03:30 (Tehran)</option>
+                    <option value="4">UTC +04:00 (Dubai, Baku, Tbilisi)</option>
+                    <option value="4.5">UTC +04:30 (Kabul)</option>
+                    <option value="5">UTC +05:00 (Karachi, Tashkent)</option>
+                    <option value="5.5">UTC +05:30 (IST: New Delhi, Mumbai, Colombo)</option>
+                    <option value="5.75">UTC +05:45 (Kathmandu)</option>
+                    <option value="6">UTC +06:00 (Dhaka, Almaty)</option>
+                    <option value="6.5">UTC +06:30 (Yangon)</option>
+                    <option value="7">UTC +07:00 (Bangkok, Jakarta, Hanoi)</option>
+                    <option value="8">UTC +08:00 (Beijing, Shanghai, Hong Kong, Taipei, Singapore, Perth)</option>
+                    <option value="9" selected>UTC +09:00 (JST: Tokyo, Kyoto, Seoul)</option>
+                    <option value="9.5">UTC +09:30 (Adelaide, Darwin)</option>
+                    <option value="10">UTC +10:00 (AEST: Sydney, Melbourne, Brisbane)</option>
+                    <option value="11">UTC +11:00 (Solomon Islands, Noumea)</option>
+                    <option value="12">UTC +12:00 (NZST: Auckland, Fiji)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Latitude & Longitude -->
+              <div class="grid-2">
+                <div class="input-group">
+                  <label class="input-label" for="modal-lat">Latitude (° N/S)</label>
+                  <input type="number" step="0.0001" class="text-input" id="modal-lat" value="35.0116" required />
+                </div>
+
+                <div class="input-group">
+                  <label class="input-label" for="modal-lon">Longitude (° E/W)</label>
+                  <input type="number" step="0.0001" class="text-input" id="modal-lon" value="135.7681" required />
+                </div>
+              </div>
+
+              <!-- True Solar Time Toggle -->
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(212, 175, 55, 0.08); border-radius: var(--radius-md); border: 1px solid var(--gold-border);">
+                <div>
+                  <div style="font-weight: 600; color: var(--gold-light); font-size: 0.88rem;">Adjust to True Solar Time (真太阳时)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Calculates Equation of Time (EoT) + Geographic Longitude Solar Offset</div>
+                </div>
+                <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                  <input type="checkbox" id="modal-tst-toggle" checked style="opacity: 0; width: 0; height: 0;">
+                  <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gold-primary); border-radius: 34px; transition: .3s;"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" id="modal-btn-cancel">Cancel</button>
+              <button type="submit" class="btn-primary" id="modal-btn-save">
+                <i data-lucide="sparkles"></i> Save & Recalculate Natal Engine
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Toast Container -->
+      <div id="toast-container"></div>
+
+    </div>
+
+    <!-- Application Script -->
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

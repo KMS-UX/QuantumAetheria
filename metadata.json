@@ -1,0 +1,6 @@
+{
+  "name": "Aetheria - Multi-School Divination & Fate Analysis",
+  "description": "Comprehensive multi-school divination and fate analysis framework featuring Western Astrology, BaZi Four Pillars, Zi Wei Dou Shu, Interactive Tarot, Runes, I Ching, Oneiromancy, and High-Thinking AI Consultation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

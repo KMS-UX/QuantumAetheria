@@ -1,12 +1,18 @@
 /**
  * AETHERIA — Centralized API Integration Service Layer (`api_service.js`)
- * 
+ *
  * Supports:
  * - Option A: Dify / n8n Webhook API endpoint integration.
  * - Option B: Direct / Proxied Google Gemini API endpoint with High Thinking.
+ * - Option C: On-device Gemma 4 E4B (Android, via LiteRT-LM) — sensitive prompts never
+ *   leave the device. Tried first when available; falls back to Options A/B otherwise.
  * - Master Prompt Synthesizer injection following strict multi-school directives.
  * - Robust error handling, offline mock fallback engine, and network status notifications.
  */
+
+import { registerPlugin } from '@capacitor/core';
+
+const AetheriaLLM = registerPlugin('AetheriaLLM');
 
 export const APIService = {
   // Config state saved in localStorage
@@ -113,9 +119,87 @@ You are "The Master Synthesizer," an elite multi-school divination and destiny a
   async consult(options) {
     const payload = this.buildRequestPayload(options);
 
+    if (this.isOnDevicePlatform()) {
+      try {
+        const ready = await this.isOnDeviceModelReady();
+        if (ready) {
+          return await this.callOnDeviceBackend(payload);
+        }
+      } catch (err) {
+        console.warn('On-device availability check failed, falling back to cloud:', err);
+      }
+    }
+
     if (this.config.provider === 'webhook' && this.config.webhookUrl) {
       return this.callWebhookEndpoint(payload);
     } else {
+      return this.callGeminiBackend(payload);
+    }
+  },
+
+  /**
+   * True only when running inside the Capacitor Android app (never in a plain browser),
+   * where the AetheriaLLM native plugin exists to bridge to on-device Gemma 4 E4B.
+   */
+  isOnDevicePlatform() {
+    return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.getPlatform() === 'android');
+  },
+
+  /**
+   * Whether the on-device model has already been downloaded to this device.
+   */
+  async isOnDeviceModelReady() {
+    if (!this.isOnDevicePlatform()) return false;
+    const result = await AetheriaLLM.isModelReady();
+    return !!(result && result.ready);
+  },
+
+  /**
+   * Downloads the on-device model (~3.7GB, one-time). `onProgress`, if given, is called with
+   * { downloadedBytes, totalBytes, percent } as the download proceeds. Resolves immediately
+   * (no-op) if the model is already present.
+   */
+  async downloadOnDeviceModel(onProgress) {
+    if (!this.isOnDevicePlatform()) {
+      throw new Error('On-device AI is only available in the Android app.');
+    }
+    let listenerHandle = null;
+    if (onProgress) {
+      listenerHandle = await AetheriaLLM.addListener('downloadProgress', onProgress);
+    }
+    try {
+      return await AetheriaLLM.downloadModel();
+    } finally {
+      if (listenerHandle) listenerHandle.remove();
+    }
+  },
+
+  /**
+   * Backend Dispatcher Option C: On-device Gemma 4 E4B via LiteRT-LM.
+   * Falls back to the cloud dispatcher (webhook or Gemini, per config) on any failure —
+   * mirrors callWebhookEndpoint/callGeminiBackend's own fallback behavior.
+   */
+  async callOnDeviceBackend(payload) {
+    try {
+      const result = await AetheriaLLM.generate({
+        // The full rendered master prompt already carries every directive (profile, natal
+        // data, active schools, custom school rules, tone, the question itself) — send it
+        // as-is rather than re-splitting into a separate system instruction.
+        prompt: payload.masterPrompt
+      });
+
+      return {
+        success: true,
+        response: result.text,
+        thinking: 'Processed entirely on-device via Gemma 4 E4B (LiteRT-LM) — no data left this device.',
+        provider: 'on-device',
+        modelUsed: 'Gemma 4 E4B (on-device)'
+      };
+    } catch (err) {
+      console.warn('On-device generation failed, falling back to cloud dispatcher:', err);
+      if (this.config.provider === 'webhook' && this.config.webhookUrl) {
+        return this.callWebhookEndpoint(payload);
+      }
       return this.callGeminiBackend(payload);
     }
   },

@@ -949,6 +949,8 @@ function setupAPISettingsAndVault() {
     });
   }
 
+  setupOnDeviceAICard();
+
   // Vault Export
   const exportBtn = document.getElementById('btn-export-vault-json');
   if (exportBtn) {
@@ -1030,6 +1032,65 @@ function setupAPISettingsAndVault() {
       reader.readAsText(file);
     });
   }
+}
+
+// --- ON-DEVICE AI (Android only) ---
+function setupOnDeviceAICard() {
+  const card = document.getElementById('on-device-ai-card');
+  if (!card || !APIService.isOnDevicePlatform()) return; // stays hidden on web/desktop
+
+  card.style.display = 'block';
+
+  const statusText = document.getElementById('on-device-status-text');
+  const downloadBtn = document.getElementById('btn-download-on-device-model');
+  const progressWrap = document.getElementById('on-device-progress-wrap');
+  const progressBar = document.getElementById('on-device-progress-bar');
+  const progressText = document.getElementById('on-device-progress-text');
+
+  async function refreshStatus() {
+    try {
+      const ready = await APIService.isOnDeviceModelReady();
+      if (ready) {
+        statusText.textContent = '✦ Model downloaded and active — consultations run on-device.';
+        downloadBtn.style.display = 'none';
+      } else {
+        statusText.textContent = 'Model not yet downloaded. Cloud backend is used until this completes.';
+        downloadBtn.style.display = 'inline-flex';
+      }
+    } catch (e) {
+      statusText.textContent = 'Could not check on-device model status.';
+      console.warn('On-device status check failed:', e);
+    }
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', async () => {
+      downloadBtn.disabled = true;
+      progressWrap.style.display = 'block';
+      statusText.textContent = 'Downloading Gemma 4 E4B (~3.7 GB) — keep the app open until this finishes.';
+
+      try {
+        await APIService.downloadOnDeviceModel((progress) => {
+          const percent = progress.percent ?? 0;
+          progressBar.style.width = `${percent}%`;
+          const mb = (bytes) => (bytes / (1024 * 1024)).toFixed(0);
+          progressText.textContent = `${percent}% — ${mb(progress.downloadedBytes || 0)} MB / ${mb(progress.totalBytes || 0)} MB`;
+        });
+
+        if (soundEngine) soundEngine.playHarmonicChord();
+        showToast('On-device model ready — future consultations stay on this device.');
+        progressWrap.style.display = 'none';
+        await refreshStatus();
+      } catch (err) {
+        console.error('On-device model download failed:', err);
+        showToast('On-device model download failed. Still using the cloud backend.');
+        downloadBtn.disabled = false;
+        progressWrap.style.display = 'none';
+      }
+    });
+  }
+
+  refreshStatus();
 }
 
 // --- TOAST ALERTS ---

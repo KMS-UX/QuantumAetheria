@@ -1160,6 +1160,28 @@
                 </form>
               </div>
 
+              <!-- On-Device AI (Android only — hidden elsewhere) -->
+              <div class="card" id="on-device-ai-card" style="display: none;">
+                <div class="card-header">
+                  <div class="card-title"><i data-lucide="smartphone"></i> <span>On-Device AI (Gemma 4 E4B)</span></div>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;">
+                  Runs consultations locally on this device via LiteRT-LM — sensitive birth and dream data never leaves your phone. Automatically preferred over the cloud backend above whenever the model is downloaded and ready.
+                </p>
+                <div id="on-device-status-box" style="padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--gold-border); border-radius: var(--radius-md); margin-bottom: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+                  <span id="on-device-status-text">Checking status…</span>
+                </div>
+                <div id="on-device-progress-wrap" style="display: none; margin-bottom: 12px;">
+                  <div style="height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+                    <div id="on-device-progress-bar" style="height: 100%; width: 0%; background: var(--gold-primary); transition: width 0.2s;"></div>
+                  </div>
+                  <span id="on-device-progress-text" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; display: block;"></span>
+                </div>
+                <button class="btn-primary" id="btn-download-on-device-model">
+                  <i data-lucide="download-cloud"></i> Download On-Device Model (~3.7 GB)
+                </button>
+              </div>
+
               <!-- Data Portability: Export / Import -->
               <div class="card">
                 <div class="card-header">
